@@ -26,6 +26,10 @@ class RunScheduler:
             password=os.getenv('REDIS_PASSWORD')
         )
 
+    def stop(self):
+        self.mongo.close()
+        self.redis_queue.redis_connection.close()
+
     def schedule_run(self, run_code: str, config: SingleRunConfig, is_eval_run=False,
                      queue_name: Optional[str] = None):
         self.mongo.add_scheduled_run(run_code, run_config=config)

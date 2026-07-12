@@ -6,17 +6,11 @@ from numpy.random import RandomState
 from prorl.emulator import emulator_config, EmulatorConfig
 from prorl.emulator.data_structure import ModelTypes
 from prorl.common.data_structure import RunMode
-from prorl.emulator.models.auto_configurable_model import AutoConfigurableModel
-from prorl.emulator.models.nodes_demand_model import NodesDemandModel
 from prorl.emulator.models.synthetic_model import SyntheticModel
 from prorl.emulator.models.tim_dataset_model import TimDatasetModel
-from prorl.emulator.models.test_model import TestModel
 
 MAPPING = {
-    ModelTypes.AutoConfigurableModel: AutoConfigurableModel,
-    ModelTypes.NodesDemandModel: NodesDemandModel,
     ModelTypes.TimDatasetModel: TimDatasetModel,
-    ModelTypes.TestModel: TestModel,
     ModelTypes.SyntheticModel: SyntheticModel,
 }
 
@@ -39,7 +33,7 @@ def create_model_from_type(
         random_seed: int = 42,
         use_pool_node: bool = False,
         **kwargs
-) -> Union[AutoConfigurableModel, NodesDemandModel]:
+) -> Union[SyntheticModel, TimDatasetModel]:
     config: EmulatorConfig = em_config if em_config is not None else emulator_config
     model_name = config.model.type
     if model_type is not None:

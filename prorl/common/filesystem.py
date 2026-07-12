@@ -27,8 +27,9 @@ def get_data_base_dir():
 
 def filter_out_path(path: str) -> str:
     path_to_filter = os.getenv('FILTER_PATH')
-    path = path.replace(path_to_filter, '')
-    return path
+    if path is None or not path_to_filter:
+        return path
+    return path.replace(path_to_filter, '')
 
 
 def create_directory(path):

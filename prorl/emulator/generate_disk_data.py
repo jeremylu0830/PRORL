@@ -19,7 +19,7 @@ from prorl.emulator.models.abstract import AbstractModel
 def get_model_metadata(config: SingleRunConfig, model_name: str) -> Dict[str, Any]:
     metadata = {
         'model_name': model_name,
-        'model': config.emulator.model.nodes_demand_model_options.export(mode=ExportMode.DICT),
+        'model': config.emulator.model.synthetic_model.export(mode=ExportMode.DICT),
         'model_disk': config.emulator.model.model_disk.export(mode=ExportMode.DICT),
         'base_station_name_mappings': config.emulator.model.base_station_name_mappings,
         'nodes': config.environment.nodes.export(mode=ExportMode.DICT),

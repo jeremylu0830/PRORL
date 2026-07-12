@@ -61,9 +61,6 @@ class ModelConfig(AbstractConfig):
         if self.type == ModelTypes.TimDatasetModel:
             self.model_disk.use_disk = False
             self.base_station_name_mappings = {str(bs_id): bs_id for bs_id in self.tim_dataset_model_options.bs_ids}
-        elif self.type == ModelTypes.TestModel:
-            self.model_disk.use_disk = False
-            self.base_station_name_mappings = {str(i): i for i in range(self.test_model_options.n_nodes)}
         self.n_base_stations = len(self.base_station_name_mappings)
 
 

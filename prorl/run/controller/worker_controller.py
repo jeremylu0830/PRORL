@@ -18,7 +18,6 @@ class WorkerController(Controller):
         worker = Worker(
             processes=processes,
             worker_type=WorkerType.RunWorker,
-            use_tunnelling=use_ssh_tunnel,
             queue_name=queue,
             validation_queue_name=validation_queue,
             stop_empty=stop_empty
@@ -30,7 +29,6 @@ class WorkerController(Controller):
         worker = Worker(
             processes=processes,
             worker_type=WorkerType.ValidationWorker,
-            use_tunnelling=use_ssh_tunnel,
             queue_name=queue,
             stop_empty=stop_empty
         )
@@ -41,7 +39,6 @@ class WorkerController(Controller):
         worker = Worker(
             processes=processes,
             worker_type=WorkerType.EvalWorker,
-            use_tunnelling=use_ssh_tunnel,
             queue_name=queue,
             stop_empty=stop_empty
         )

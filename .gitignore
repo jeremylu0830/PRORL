@@ -192,3 +192,8 @@ notebooks/interactive_tests.ipynb
 .env.local
 .env.production
 .env.production.brex
+
+# Local training artifacts
+data/models/results/
+experiments/proactivity_ablation/proactivity_summary.csv
+experiments/proactivity_ablation/generated/__pycache__/

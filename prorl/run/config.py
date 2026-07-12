@@ -220,8 +220,10 @@ class SingleRunConfig(AbstractConfig):
 
     def _after_override_configs(self):
         for res in self.environment.resources:
-            self.emulator.model.nodes_demand_model_options.resource_absolute_values[res.name] = res.total_available
-            self.emulator.model.auto_configurable_model_options.resource_absolute_values[res.name] = res.total_available
+            for options_name in ('nodes_demand_model_options', 'auto_configurable_model_options'):
+                model_options = getattr(self.emulator.model, options_name, None)
+                if model_options is not None:
+                    model_options.resource_absolute_values[res.name] = res.total_available
         if self.emulator.model.type == ModelTypes.TimDatasetModel:
             model_options = self.emulator.model.tim_dataset_model_options
             n_nodes = len(self.emulator.model.base_station_names())
@@ -288,16 +290,6 @@ class SingleRunConfig(AbstractConfig):
             # self.run.stop_date = model_options.time_step[self.run.run_mode]['end_date']
             if AgentType.is_mc_method(self.environment.agent.type):
                 self.run.episode_per_iteration = 1
-        # updated for the TestModel
-        if self.emulator.model.type == ModelTypes.TestModel:
-            self.emulator.model.test_model_options.time_step_size = self.run.step_size
-            self.run.rollout_batch_size = int(24 * 7 * self.run.episode_per_iteration)
-            self.run.evaluation_episode_length = int(24 * 7 * 1)
-            self.run.validation_run.rollout_batch_size = int(24 * 7 * 1)
-            self.run.stop_step = self.run.step_size * 24 * 7
-            self.emulator.model.test_model_options.n_nodes = self.environment.nodes.n_nodes
-            self.emulator.model.base_station_name_mappings = {str(i): i for i in range(self.environment.nodes.n_nodes)}
-            self.emulator.model.n_base_stations = self.environment.nodes.n_nodes
         if self.emulator.model.type == ModelTypes.SyntheticModel:
             model_options = self.emulator.model.synthetic_model
             episode_length = model_options.episode_length * len(model_options.distribution_multipliers)
