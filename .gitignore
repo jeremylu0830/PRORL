@@ -197,3 +197,12 @@ notebooks/interactive_tests.ipynb
 data/models/results/
 experiments/proactivity_ablation/proactivity_summary.csv
 experiments/proactivity_ablation/generated/__pycache__/
+
+# Proactivity experiment outputs (regenerable or transferred separately)
+/proactivity-*.tar.gz
+experiments/proactivity_ablation/proactivity_summary-all.csv
+experiments/proactivity_ablation/dynamics_analysis/
+experiments/proactivity_ablation/dynamics_analysis_3way/
+experiments/proactivity_ablation/shifted_evaluation_smoke/
+experiments/proactivity_ablation/shifted_evaluations/
+experiments/proactivity_ablation/shifted_analysis/
