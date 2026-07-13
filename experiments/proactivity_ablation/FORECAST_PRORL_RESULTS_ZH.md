@@ -188,7 +188,7 @@ Forecast-No-Time 相較 Original：
 
 沒有一個 shifted schedule 顯示 Forecast-No-Time 在 utility 或 remaining gap 上顯著優於 Original。
 
-Forecast-No-Time 的 seven-hour target-add rate也沒有顯著優於 Original。這表示它確實改變配置軌跡，並在 event 時保有更多正確資源，但動作不夠精準或代價結構不利，未形成 objective gain。
+Forecast-No-Time 的 seven-hour target-add rate 也沒有顯著優於 Original。這表示它確實改變配置軌跡，並在 event 時保有更多正確資源，但動作不夠精準或代價結構不利，未形成 objective gain。
 
 ## 6. 對原研究問題的回答
 
@@ -219,7 +219,81 @@ Forecast-No-Time 的 seven-hour target-add rate也沒有顯著優於 Original。
 - unseen schedule 變異反而更大。
 - seed 15 unseen episode 出現高 surplus，導致 utility 約 124.97，是需要追查的 instability case。
 
-## 7. 合理解釋
+## 7. Same-checkpoint forecast inference ablation
+
+為了排除 checkpoint、workload、initial state 與 random seed 的混淆，使用相同的 10 個 Forecast-No-Time frozen checkpoints，只介入進入 state 前的 forecast：
+
+```text
+oracle          原始 Oracle forecast
+masked          全 horizon 改成 in-distribution calm demand
+node-permuted   每個 node pair 的 forecast value 對調
+time-reversed   t+1...t+6 反轉為 t+6...t+1
+```
+
+規模：
+
+```text
+10 checkpoints × 4 modes × 4 schedules × 5 evaluation seeds
+= 160 jobs / 800 episodes
+```
+
+完整性確認：
+
+- 每個 job 都禁止 `learn()`。
+- 每個 job 前後 73 個 agent tensors 完全一致。
+- Oracle mode 的 metric 與 action histories 和前一輪 shifted evaluation 40/40 完全一致；只有執行時間不同。
+- Perturbation 發生於 Oracle output 產生後、state normalization 前。
+
+### 7.1 Forecast 是否是必要訊號？
+
+Oracle 相較 masked：
+
+| Schedule | Utility improvement | p | Remaining-gap improvement | p | Allocation-lift improvement | p |
+|---|---:|---:|---:|---:|---:|---:|
+| control | +1.506 | 0.0078 | +26.300 | 0.0078 | +0.625 | 0.0039 |
+| shift_plus_6h | +1.395 | 0.0078 | +24.520 | 0.0078 | +0.632 | 0.0039 |
+| shift_plus_1d | +1.084 | 0.0078 | +19.240 | 0.0078 | +0.641 | 0.0039 |
+| unseen | +0.591 | 0.8652 | +38.740 | 0.0039 | +0.546 | 0.0039 |
+
+Masked 後 event-allocation lift 從 Oracle 的 `0.466–0.564` 降至 `-0.083–-0.076`。因此 forecast availability 對正確的提前配置與 remaining gap 是因果必要條件。Unseen utility 沒有顯著差異主要受到既有高變異 outlier 影響，但 remaining gap 與 allocation lift 仍顯著惡化。
+
+### 7.2 網路是否使用 node identity？
+
+Node-permuted 將高需求預測從真實 stressed node 移到同 pair 的錯誤 node。結果：
+
+| Schedule | Wrong-node allocation − correct-node allocation | p |
+|---|---:|---:|
+| control | +0.700 | 0.0156 |
+| shift_plus_6h | +0.700 | 0.0156 |
+| shift_plus_1d | +0.700 | 0.0156 |
+| unseen | +0.650 | 0.0156 |
+
+錯誤 forecast 會讓網路把更多資源配置到錯誤節點，證明它確實讀取 forecast 的空間／node identity，而不是只把 24 個維度當作無意義附加值。
+
+### 7.3 網路是否使用 horizon 順序？
+
+Oracle 相較 time-reversed 的 correct event-allocation lift：
+
+```text
+control:        +0.338, p=0.0371
+shift_plus_6h:  +0.334, p=0.0371
+shift_plus_1d:  +0.324, p=0.0371
+unseen:         +0.265, p=0.0918
+```
+
+前三種 schedules 顯著，unseen 方向一致但未達 0.05。這表示網路不只判斷「未來某處有 peak」，也使用 `t+1...t+6` 的相對順序。
+
+### 7.4 更新後的科學結論
+
+Inference ablation 將 forecast usage 拆成三部分並分別確認：
+
+1. **存在性：** mask forecast 會破壞 allocation lift 與 remaining gap。
+2. **空間資訊：** permute nodes 會把資源引向錯誤節點。
+3. **時間資訊：** reverse horizon 會削弱正確 event allocation。
+
+因此可以排除「網路忽略 forecast」的解釋。Oracle forecast 對這個 frozen Forecast policy 本身也有 utility benefit（control、+6h、+1d 皆顯著）。但這不與四組比較衝突：forecast 對 Forecast-trained policy 有因果價值，卻仍未讓獨立訓練的 Forecast condition 在整體上顯著超越 Original 或 No-Time。
+
+## 8. 合理解釋
 
 目前最合理的解釋不是「forecast 沒用」，而是：
 
@@ -230,37 +304,30 @@ Forecast-No-Time 的 seven-hour target-add rate也沒有顯著優於 Original。
 5. Reward 同時混合 gap、surplus 與 movement cost。提前配置改善 demand readiness，但可能被 surplus 或不必要 movement 抵銷。
 6. Training 只使用固定 schedule；即使拿到 forecast，網路仍可能學到特定 pattern，而不是一般 forecast-to-action mapping。
 
-## 8. 下一步優先順序
+## 9. 下一步優先順序
 
-### 第一優先：Forecast usage inference ablation
+### 已完成：Forecast usage inference ablation
 
-不重新訓練，對相同 Forecast-No-Time checkpoint 比較：
+相同 checkpoint 的 oracle、masked、node-permuted、time-reversed 共 800 episodes 已完成。結果確認模型使用 forecast 的存在、node identity 與 horizon order。
 
-- 正常 Oracle forecast
-- calm/masked forecast
-- node-permuted forecast
-- time-shuffled forecast
+### 第一優先：Randomized-schedule training
 
-比較 Q/action、event allocation lift 與 utility。這能確認網路究竟使用 forecast 的哪一部分。
+訓練期間隨機化 peak day/hour、stressed node、stress magnitude 與 duration，evaluation 使用 held-out combinations。現在已有足夠因果證據支持進入這一步。
 
-### 第二優先：Randomized-schedule training
+這比立即換 LSTM 更重要：Schedule Oracle 已證明對 frozen policy 有因果價值；下一個問題是 training distribution 能否讓這個價值穩定超越 No-Time／Original，而不是 forecast accuracy。
 
-訓練期間隨機化 peak day/hour，evaluation 使用 held-out schedules。若 Forecast-No-Time 真正學會一般 forecast-to-action mapping，它應在 held-out schedule 保持 allocation lift，並比無 forecast policy 更穩定。
-
-這比立即換 LSTM 更重要：Schedule Oracle 已是最乾淨的 upper bound；若 policy 無法把 Oracle 穩定轉成 reward，加入有誤差的 LSTM 只會讓問題更難解釋。
-
-### 第三優先：讓 action 與 reward 能利用提前資訊
+### 第二優先：讓 action 與 reward 能利用提前資訊
 
 - quantity-aware action：node → quantity
 - 限制或懲罰無效的 continuous movement
 - 將 SLA remaining gap 改成 constrained objective
 - 分開報告 satisfaction gain 與 movement/surplus cost
 
-## 9. 論文可使用的結論文字
+## 10. 論文可使用的結論文字
 
-> The original calendar-conditioned policy retained 95.9–98.6% of its control action sequence under temporal demand shifts and continued targeting obsolete peak slots, supporting fixed-schedule memorization. In contrast, Forecast-No-Time changed its actions substantially and produced a significant stressed-node allocation lift on all shifted schedules. Relative to Original, this lift increased by 0.568, 0.533, and 0.384 resource units for the +6-hour, +1-day, and unseen schedules, respectively. However, these behavioral improvements did not yield statistically significant gains in utility or remaining demand gap. Explicit forecast information therefore enabled transferable anticipatory behavior, but the current reward, action space, and learning design did not reliably convert that behavior into end-to-end performance improvements.
+> The original calendar-conditioned policy retained 95.9–98.6% of its control action sequence under temporal demand shifts and continued targeting obsolete peak slots, supporting fixed-schedule memorization. Forecast-No-Time instead produced a significant stressed-node allocation lift on all shifted schedules. Same-checkpoint counterfactual evaluation further showed that masking the forecast eliminated this lift, permuting node forecasts redirected resources toward the falsely indicated nodes, and reversing the six-hour horizon weakened event-time allocation. These interventions establish that the policy uses forecast availability, spatial identity, and temporal order. Nevertheless, independently trained Forecast-No-Time policies did not significantly outperform Original or No-Time in aggregate utility. Explicit forecast therefore enabled transferable anticipatory behavior and was causally useful within the learned policy, but the current training distribution, reward, and action design did not reliably convert that information into superior end-to-end performance.
 
-## 10. 可重現指令
+## 11. 可重現指令
 
 固定 schedule 分析：
 
@@ -289,4 +356,21 @@ ENV=test python experiments/proactivity_ablation/run_shifted_evaluations.py \
 python experiments/proactivity_ablation/analyze_shifted_evaluations.py \
   experiments/proactivity_ablation/shifted_evaluations \
   --output-dir experiments/proactivity_ablation/forecast_shifted_analysis
+```
+
+Forecast inference ablation：
+
+```bash
+ENV=test python experiments/proactivity_ablation/run_forecast_inference_ablation.py \
+  <Forecast-No-Time root> \
+  --output-dir experiments/proactivity_ablation/forecast_inference_ablation \
+  --modes oracle masked node-permuted time-reversed \
+  --training-seeds 10 11 12 13 14 15 16 17 18 19 \
+  --evaluation-seeds 1000 1100 1200 1300 1400 \
+  --schedules control shift_plus_6h shift_plus_1d unseen \
+  --checkpoint best
+
+python experiments/proactivity_ablation/analyze_forecast_inference_ablation.py \
+  experiments/proactivity_ablation/forecast_inference_ablation \
+  --output-dir experiments/proactivity_ablation/forecast_inference_analysis
 ```
