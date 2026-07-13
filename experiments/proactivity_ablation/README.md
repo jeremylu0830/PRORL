@@ -11,8 +11,26 @@ source .venv/bin/activate
 python experiments/proactivity_ablation/generate_configs.py
 ```
 
-This creates `generated/original.yaml` and `generated/no_time.yaml`. Both use training
-seeds 10--19 and otherwise inherit the paper's longer single-peak configuration.
+This creates `generated/original.yaml`, `generated/no_time.yaml`, and
+`generated/forecast_no_time.yaml`. All use training seeds 10--19 and otherwise inherit
+the paper's longer single-peak configuration. Forecast-No-Time removes `time-encoded`
+and adds a six-hour, node-major Schedule Oracle forecast to the state. The oracle exposes
+the configured future demand mean and intentionally excludes random observation noise.
+
+Run the compatibility and forecast integration tests with:
+
+```bash
+ENV=test python -m unittest experiments.proactivity_ablation.test_forecast_state -v
+```
+
+The bounded training smoke test can be detached and monitored independently:
+
+```bash
+tmux new-session -d -s forecast-smoke \
+  '.venv/bin/python experiments/proactivity_ablation/run_forecast_smoke.py'
+tmux new-session -d -s forecast-smoke-monitor \
+  '.venv/bin/python experiments/proactivity_ablation/monitor_forecast_smoke.py'
+```
 
 ## 2. Schedule and run
 
@@ -26,6 +44,9 @@ python prorl.py run worker run-worker -p 0 --stop-empty -q proactivity-ablation
 ```
 
 Multiple workers can consume the same queue.
+
+The folder command schedules all three variants. To schedule only Forecast-No-Time,
+place or copy that config into an otherwise empty scheduling folder.
 
 ## 3. Analyze
 

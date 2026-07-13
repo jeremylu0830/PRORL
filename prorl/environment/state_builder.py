@@ -15,6 +15,7 @@ class StateFeatureName(str, ExtendedEnum):
     PoolCapacity = 'pool-capacity'
     NodeCapacity = 'node-capacity'
     NodeDemand = 'node-demand'
+    NodeDemandForecast = 'node-demand-forecast'
     NodeDelta = 'node-delta'
     SatisfiedNodes = 'satisfied-nodes'
     CostBudget = 'cost-budget'
@@ -43,6 +44,7 @@ FEATURE_RESOURCE_MAPPING = {
     StateFeatureName.PoolCapacity: True,
     StateFeatureName.NodeCapacity: True,
     StateFeatureName.NodeDemand: True,
+    StateFeatureName.NodeDemandForecast: True,
     StateFeatureName.NodeDelta: True,
     StateFeatureName.CostBudget: False,
     StateFeatureName.SatisfiedNodes: True,
@@ -168,6 +170,47 @@ def _build_feature_node_demand(resources: List[EnvResource],
                                               a=0, b=1)
         features.append(
             StateFeatureValue(name=f'{StateFeatureName.NodeDemand.value}_{resource.name}', value=feature_values))
+    return features
+
+
+def _build_feature_node_demand_forecast(resources: List[EnvResource],
+                                        forecast_loads: List[StepData],
+                                        normalized: bool,
+                                        **kwargs) -> List[StateFeatureValue]:
+    if not forecast_loads:
+        raise ValueError('node-demand-forecast requires non-empty forecast_loads')
+    expected_horizon = kwargs['additional_properties'].get('forecast_horizon')
+    if expected_horizon is None:
+        raise AttributeError('node-demand-forecast requires forecast_horizon in additional_properties')
+    if len(forecast_loads) != expected_horizon:
+        raise ValueError(f'expected {expected_horizon} forecast steps, got {len(forecast_loads)}')
+
+    features: List[StateFeatureValue] = []
+    delta_with_units = kwargs['additional_properties'].get('delta_with_units', False)
+    for resource in resources:
+        max_val = resource.total_available
+        min_val = resource.min_buckets * resource.bucket_size
+        divider = 1
+        if delta_with_units:
+            max_val = resource.total_units
+            min_val = resource.min_buckets
+            divider = resource.allocated / resource.units_allocated
+
+        # StepData is step-major. Transpose before flattening to expose
+        # [node_0(t+1..t+h), node_1(t+1..t+h), ...].
+        step_major = np.array([
+            load.get_resource_values(resource.name, as_array=True)
+            for load in forecast_loads
+        ], dtype=np.float64)
+        feature_values = (step_major.T / divider).reshape(-1)
+        if delta_with_units:
+            feature_values = np.ceil(feature_values)
+        if normalized:
+            feature_values = normalize_values(
+                feature_values, max_val=max_val, min_val=min_val, a=0, b=1)
+        features.append(StateFeatureValue(
+            name=f'{StateFeatureName.NodeDemandForecast.value}_{resource.name}',
+            value=feature_values))
     return features
 
 
@@ -543,6 +586,7 @@ FEATURE_BUILD_MAPPING = {
     StateFeatureName.PoolCapacity: _build_feature_pool_capacity,
     StateFeatureName.NodeCapacity: _build_feature_node_capacity,
     StateFeatureName.NodeDemand: _build_feature_node_demand,
+    StateFeatureName.NodeDemandForecast: _build_feature_node_demand_forecast,
     StateFeatureName.NodeDelta: _build_feature_node_delta,
     StateFeatureName.SatisfiedNodes: _build_feature_satisfied_nodes,
     StateFeatureName.CostBudget: _build_cost_budget_feature,
@@ -565,6 +609,16 @@ FEATURE_BUILD_MAPPING = {
 
 def _feature_node_resources_size(resources: List[EnvResource], nodes: List[Node], **kwargs) -> int:
     return len(resources) * len(nodes)
+
+
+def _feature_node_demand_forecast_size(resources: List[EnvResource], nodes: List[Node],
+                                       additional_properties: Dict[str, Any], **kwargs) -> int:
+    if 'forecast_horizon' not in additional_properties:
+        raise AttributeError('node-demand-forecast requires forecast_horizon in additional_properties')
+    horizon = additional_properties['forecast_horizon']
+    if not isinstance(horizon, int) or horizon <= 0:
+        raise ValueError('forecast_horizon must be a positive integer')
+    return len(resources) * len(nodes) * horizon
 
 
 def _feature_pool_capacity_size(resources: List[EnvResource], **kwargs) -> int:
@@ -635,6 +689,7 @@ FEATURE_SIZE_MAPPING = {
     StateFeatureName.PoolCapacity: _feature_pool_capacity_size,
     StateFeatureName.NodeCapacity: _feature_node_resources_size,
     StateFeatureName.NodeDemand: _feature_node_resources_size,
+    StateFeatureName.NodeDemandForecast: _feature_node_demand_forecast_size,
     StateFeatureName.NodeDelta: _feature_node_resources_size,
     StateFeatureName.SatisfiedNodes: _feature_node_resources_size,
     StateFeatureName.CostBudget: _feature_cost_budget_size,
@@ -749,4 +804,3 @@ def get_feature_size(
 def update_state_one_hot_encoding_feature(state: State, feature_name: Union[StateFeatureName, str],
                                           index: int, reset_value: int = 0):
     state.set_feature_value(feature_name, 1, index=index, reset_value=reset_value)
-

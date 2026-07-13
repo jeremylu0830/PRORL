@@ -1,3 +1,4 @@
+import copy
 from dataclasses import dataclass
 from logging import Logger
 from typing import List, Optional, Dict, Union, Tuple
@@ -8,6 +9,7 @@ from numpy.random import RandomState
 from prorl.common.data_structure import RunMode
 from prorl.core.step import Step
 from prorl.core.step_data import StepDataEntry, StepData
+from prorl.core.timestep import TimeStep
 from prorl.emulator import EmulatorConfig
 from prorl.emulator.config import CoupleConfig
 from prorl.emulator.models.abstract import AbstractModel
@@ -237,6 +239,58 @@ class SyntheticModel(AbstractModel):
             list_resources = resources
 
         return self._generate_step_data(step, list_resources, list_base_stations)
+
+    def forecast(self, current_step: Step, horizon: int) -> List[StepData]:
+        """Schedule-oracle forecast of expected demand, excluding random observation noise.
+
+        The copied couple statuses reproduce future stress/swap transitions while keeping
+        the live generator state and its random stream untouched.
+        """
+        if horizon <= 0:
+            raise ValueError('forecast horizon must be greater than zero')
+
+        statuses = copy.deepcopy(self.couples_status)
+        distribution_index = self.distribution_index
+        overall_steps = self.overall_steps
+        clock = TimeStep(
+            step_per_second=1,
+            step_size=self.model_step_size,
+            stop_step=current_step.total_steps + horizon * self.model_step_size,
+            initial_date=current_step,
+            show_log=False,
+        )
+        forecasts: List[StepData] = []
+        for _ in range(horizon):
+            future_step = clock.next()
+            data = StepData(generator_model=f'{self.model_name()}-ScheduleOracle')
+            for resource in self.resource_names:
+                if self.use_pool_node:
+                    data.add_entry(self.pool_step_data_entry(resource, future_step))
+                for status in statuses:
+                    status.set_current_load(future_step, step_size=self.model_step_size)
+                    if status.is_swapped():
+                        bs_1_demand = status.get_low_node_demand_profile(self.demand_absolute_value)
+                        bs_2_demand = status.get_high_node_demand_profile(self.demand_absolute_value)
+                    else:
+                        bs_1_demand = status.get_high_node_demand_profile(self.demand_absolute_value)
+                        bs_2_demand = status.get_low_node_demand_profile(self.demand_absolute_value)
+                    data.add_entry(StepDataEntry(
+                        resource=resource, value=max(0, bs_1_demand),
+                        base_station=status.bs_1_name, step=future_step))
+                    data.add_entry(StepDataEntry(
+                        resource=resource, value=max(0, bs_2_demand),
+                        base_station=status.bs_2_name, step=future_step))
+            forecasts.append(data)
+
+            if overall_steps > 0 and overall_steps % self.change_distribution_frequency == 0:
+                distribution_index += 1
+                multiplier = self.distribution_multipliers[
+                    distribution_index % len(self.distribution_multipliers)]
+                for status in statuses:
+                    status.load_multiplier = multiplier
+            if future_step.total_steps % self.model_step_size == 0:
+                overall_steps += 1
+        return forecasts
 
     def reset(self, show_log=True, full_reset=True):
         super(SyntheticModel, self).reset(show_log)

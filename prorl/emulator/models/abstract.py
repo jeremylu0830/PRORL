@@ -144,6 +144,10 @@ class AbstractModel:
                     data.add_entry(entry)
             return data
 
+    def forecast(self, current_step: Step, horizon: int) -> List[StepData]:
+        """Return demand for the next ``horizon`` model steps without changing model state."""
+        raise NotImplementedError(f'Model {self.model_name()} does not provide demand forecasts')
+
     def pool_step_data_entry(self, resource: str, step: Step) -> StepDataEntry:
         return StepDataEntry(resource=resource, value=0, base_station=self.pool_bs_name, step=step)
 

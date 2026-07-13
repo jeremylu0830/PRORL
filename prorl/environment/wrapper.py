@@ -202,6 +202,7 @@ class EnvWrapper:
         # running props
         self.current_state_wrapper: Optional[Dict[StateType, State]] = None
         self.current_demand: Optional[StepData] = None
+        self.current_demand_forecast: Optional[List[StepData]] = None
         self.previous_demand: Optional[StepData] = None
         self.current_state_feature_values: Optional[Dict[StateFeatureName, List[StateFeatureValue]]] = None
         self.current_lives: int = self.episode_lives
@@ -480,6 +481,7 @@ class EnvWrapper:
             previous_remove_action=previous_remove_action,
             lives=self.current_lives,
             initial_lives=self.episode_lives,
+            forecast_loads=self.current_demand_forecast,
         )
         self.current_state_feature_values = state_features
         return state
@@ -558,6 +560,16 @@ class EnvWrapper:
         self.current_state_feature_values = None
         state_step: Step = self._next_step(increase_step)
         current_demand: StepData = self.load_generator.generate(step=state_step, is_last_step=self.time_step.is_last)
+        if StateFeatureName.NodeDemandForecast in self._state_features:
+            forecast_type = self.env_config.state.additional_properties.get('forecast_type', 'oracle')
+            if forecast_type != 'oracle':
+                raise ValueError(f'Unsupported demand forecast type: {forecast_type}')
+            horizon = self.env_config.state.additional_properties.get('forecast_horizon')
+            if not isinstance(horizon, int) or horizon <= 0:
+                raise ValueError('forecast_horizon must be a positive integer')
+            self.current_demand_forecast = self.load_generator.forecast(state_step, horizon)
+        else:
+            self.current_demand_forecast = None
 
         self._populate_node_groups(current_demand)
 

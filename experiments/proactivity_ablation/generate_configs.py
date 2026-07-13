@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import copy
 from pathlib import Path
+from typing import Optional
 
 import yaml
 
@@ -29,10 +30,23 @@ def without_time_feature(config: dict) -> None:
         state[key] = [feature for feature in state[key] if feature != "time-encoded"]
 
 
-def write_variant(base: dict, output: Path, name: str, with_time: bool, seeds: list[int]) -> None:
+def add_oracle_forecast(config: dict, horizon: int = 6) -> None:
+    state = config["base_run_config"]["environment"]["state"]
+    for key in ("base_features", "features"):
+        features = state[key]
+        insert_at = features.index("node-delta") + 1
+        features.insert(insert_at, "node-demand-forecast")
+    state["additional_properties"]["forecast_horizon"] = horizon
+    state["additional_properties"]["forecast_type"] = "oracle"
+
+
+def write_variant(base: dict, output: Path, name: str, with_time: bool, seeds: list[int],
+                  oracle_horizon: Optional[int] = None) -> None:
     config = copy.deepcopy(base)
     if not with_time:
         without_time_feature(config)
+    if oracle_horizon is not None:
+        add_oracle_forecast(config, horizon=oracle_horizon)
     config["multi_run_name"] = f"proactivity-ablation-{name}"
     config["random_seeds"]["run"] = seeds
     output_path = output / f"{name}.yaml"
@@ -47,6 +61,8 @@ def main() -> None:
     args.output.mkdir(parents=True, exist_ok=True)
     write_variant(base, args.output, "original", with_time=True, seeds=args.seeds)
     write_variant(base, args.output, "no_time", with_time=False, seeds=args.seeds)
+    write_variant(base, args.output, "forecast_no_time", with_time=False,
+                  seeds=args.seeds, oracle_horizon=6)
     print(f"Generated configs in {args.output.resolve()}")
 
 
