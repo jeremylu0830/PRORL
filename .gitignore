@@ -200,9 +200,12 @@ experiments/proactivity_ablation/generated/__pycache__/
 
 # Proactivity experiment outputs (regenerable or transferred separately)
 /proactivity-*.tar.gz
+/forecast-*.tar.gz
 experiments/proactivity_ablation/proactivity_summary-all.csv
 experiments/proactivity_ablation/dynamics_analysis/
 experiments/proactivity_ablation/dynamics_analysis_3way/
 experiments/proactivity_ablation/shifted_evaluation_smoke/
 experiments/proactivity_ablation/shifted_evaluations/
 experiments/proactivity_ablation/shifted_analysis/
+experiments/proactivity_ablation/forecast_analysis/
+experiments/proactivity_ablation/forecast_shifted_analysis/

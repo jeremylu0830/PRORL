@@ -38,7 +38,7 @@ SCHEDULES: dict[str, tuple[tuple[int, int], tuple[int, int]]] = {
     "shift_plus_1d": ((4, 9), (6, 12)),
     "unseen": ((1, 17), (6, 4)),
 }
-CONDITIONS = ("Original", "No-Time", "Calendar-Only")
+CONDITIONS = ("Original", "No-Time", "Calendar-Only", "Forecast-No-Time")
 
 
 def parse_args() -> argparse.Namespace:
@@ -58,6 +58,9 @@ def parse_args() -> argparse.Namespace:
 def classify(features: list[str]) -> str:
     has_time = "time-encoded" in features
     has_demand = "node-demand" in features or "node-delta" in features
+    has_forecast = "node-demand-forecast" in features
+    if has_forecast and not has_time:
+        return "Forecast-No-Time"
     if has_time and not has_demand:
         return "Calendar-Only"
     if has_time:

@@ -68,7 +68,13 @@ def main() -> None:
     if args.steps < 32:
         raise ValueError("smoke training requires at least 32 steps")
     with args.config.resolve().open(encoding="utf-8") as stream:
-        raw = copy.deepcopy(yaml.safe_load(stream)["base_run_config"])
+        multi_run_raw = yaml.safe_load(stream)
+    raw = copy.deepcopy(multi_run_raw["base_run_config"])
+    # The multi-run scheduler replaces the base agent type with the key under
+    # `hyperparameters`. Mirror that behavior so smoke tests the agent that the
+    # full experiment will actually train (currently `prorl-no-split`).
+    scheduled_agent_type = next(iter(multi_run_raw["hyperparameters"]))
+    raw["environment"]["agent"]["type"] = scheduled_agent_type
 
     raw["run"]["training_iterations"] = args.steps
     raw["run"]["validation_run"]["enabled"] = False
@@ -87,6 +93,7 @@ def main() -> None:
         "training_steps": args.steps,
         "bootstrap_steps": 16,
         "batch_size": 16,
+        "scheduled_agent_type": scheduled_agent_type,
         "started_at": time.time(),
     }
     write_report(args.result, report)
@@ -115,6 +122,7 @@ def main() -> None:
             "forecast_feature_size": forecast_size,
             "changed_agent_tensors": changed,
             "agent_tensor_count": len(after),
+            "actual_agent_type": runner.agent.name.value,
             "state_spaces": {key.value: value for key, value in runner.env.state_spaces.items()},
             "finished_at": time.time(),
         })

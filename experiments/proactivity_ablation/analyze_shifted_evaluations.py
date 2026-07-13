@@ -15,7 +15,7 @@ from statistics import mean, stdev
 import matplotlib.pyplot as plt
 
 
-CONDITIONS = ("Original", "No-Time", "Calendar-Only")
+CONDITIONS = ("Original", "No-Time", "Calendar-Only", "Forecast-No-Time")
 SCHEDULES = ("control", "shift_plus_6h", "shift_plus_1d", "unseen")
 SHIFTED = SCHEDULES[1:]
 OLD_PEAKS = ((3, 9, 1), (5, 12, 3))
@@ -84,7 +84,15 @@ def parse_file(path: Path) -> tuple[list[dict], dict]:
         old = old_events()
         new_hits = [adds[index] == target for index, target in new]
         old_hits = [adds[index] == target for index, target in old]
+        new_window_hits = [adds[index + offset] == target
+                           for index, target in new for offset in range(-6, 1)]
+        new_pre_peak_hits = [any(adds[index + offset] == target for offset in range(-6, 0))
+                             for index, target in new]
         new_allocations = [allocations[index][target] for index, target in new]
+        target_nodes = sorted({target for _, target in new})
+        background_target_allocation = mean(
+            allocation[target] for allocation in allocations for target in target_nodes)
+        event_target_allocation = mean(new_allocations)
         row = {
             "condition": condition,
             "training_seed": training_seed,
@@ -96,8 +104,12 @@ def parse_file(path: Path) -> tuple[list[dict], dict]:
             "movement_cost": float(first(data[f"{prefix}/reward/cost/total"])),
             "gap_hours": sum(value < 0 for value in gaps),
             "new_peak_hit_rate": mean(new_hits),
+            "new_peak_window_target_rate": mean(new_window_hits),
+            "new_peak_any_pre_hit_rate": mean(new_pre_peak_hits),
             "old_slot_target_rate": mean(old_hits),
-            "new_peak_target_allocation": mean(new_allocations),
+            "new_peak_target_allocation": event_target_allocation,
+            "mean_target_allocation_all_hours": background_target_allocation,
+            "new_peak_allocation_lift": event_target_allocation - background_target_allocation,
             "result": str(path),
         }
         rows.append(row)
@@ -124,7 +136,9 @@ def aggregate(rows: list[dict], traces: list[dict]) -> list[dict]:
     trace_map = {(item["condition"], item["training_seed"], item["schedule"]): item for item in traces}
     result = []
     numeric = ("utility", "remaining_gap", "surplus", "movement_cost", "gap_hours",
-               "new_peak_hit_rate", "old_slot_target_rate", "new_peak_target_allocation")
+               "new_peak_hit_rate", "new_peak_window_target_rate", "new_peak_any_pre_hit_rate",
+               "old_slot_target_rate", "new_peak_target_allocation", "mean_target_allocation_all_hours",
+               "new_peak_allocation_lift")
     for key, sample in sorted(grouped.items()):
         condition, training_seed, schedule = key
         row = {"condition": condition, "training_seed": training_seed, "schedule": schedule}
@@ -161,8 +175,9 @@ def mean_sd(values: list[float]) -> str:
 def plot_regret(rows: list[dict], output: Path) -> None:
     fig, axis = plt.subplots(figsize=(10.5, 5.3))
     x = list(range(len(SHIFTED)))
-    width = 0.24
-    for offset, condition in zip((-width, 0, width), CONDITIONS):
+    width = 0.18
+    offsets = [width * (index - (len(CONDITIONS) - 1) / 2) for index in range(len(CONDITIONS))]
+    for offset, condition in zip(offsets, CONDITIONS):
         means, errors = [], []
         for schedule in SHIFTED:
             values = [row["utility_regret"] for row in rows
@@ -187,7 +202,7 @@ def plot_behavior(rows: list[dict], output: Path) -> None:
     for axis, metric, title in (
             (axes[0], "new_peak_hit_rate", "Correct add at new peak"),
             (axes[1], "old_slot_target_rate", "Targeted add at obsolete old slot")):
-        for condition, marker in zip(CONDITIONS, ("o", "s", "^")):
+        for condition, marker in zip(CONDITIONS, ("o", "s", "^", "D")):
             values = [mean(row[metric] for row in rows
                            if row["condition"] == condition and row["schedule"] == schedule)
                       for schedule in SHIFTED]
@@ -206,7 +221,7 @@ def plot_behavior(rows: list[dict], output: Path) -> None:
 def plot_agreement(rows: list[dict], output: Path) -> None:
     fig, axis = plt.subplots(figsize=(9.5, 5))
     x = list(range(len(SHIFTED)))
-    for condition, marker in zip(CONDITIONS, ("o", "s", "^")):
+    for condition, marker in zip(CONDITIONS, ("o", "s", "^", "D")):
         values = [mean(row["action_sequence_agreement_with_control"] for row in rows
                        if row["condition"] == condition and row["schedule"] == schedule)
                   for schedule in SHIFTED]
@@ -226,13 +241,13 @@ def build_report(rows: list[dict], output: Path) -> None:
     lines = [
         "# Shifted-peak evaluation report",
         "",
-        "Thirty frozen checkpoints were evaluated on four schedules and five evaluation seeds. "
+        f"{len(CONDITIONS) * 10} frozen checkpoints were evaluated on four schedules and five evaluation seeds. "
         "The runner forbids learning calls; all results are inference-only.",
         "",
         "## Schedule-level results",
         "",
-        "| Schedule | Condition | Utility | Utility regret | New-peak hit | Old-slot action | Action agreement |",
-        "|---|---|---:|---:|---:|---:|---:|",
+        "| Schedule | Condition | Utility | Utility regret | New-peak hit | 7h target rate | Target allocation | Allocation lift | Old-slot action | Action agreement |",
+        "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|",
     ]
     for schedule in SCHEDULES:
         for condition in CONDITIONS:
@@ -241,6 +256,9 @@ def build_report(rows: list[dict], output: Path) -> None:
                 f"| {schedule} | {condition} | {mean_sd([r['utility'] for r in sample])} | "
                 f"{mean_sd([r['utility_regret'] for r in sample])} | "
                 f"{mean_sd([r['new_peak_hit_rate'] for r in sample])} | "
+                f"{mean_sd([r['new_peak_window_target_rate'] for r in sample])} | "
+                f"{mean_sd([r['new_peak_target_allocation'] for r in sample])} | "
+                f"{mean_sd([r['new_peak_allocation_lift'] for r in sample])} | "
                 f"{mean_sd([r['old_slot_target_rate'] for r in sample])} | "
                 f"{mean_sd([r['action_sequence_agreement_with_control'] for r in sample])} |"
             )
@@ -253,6 +271,8 @@ def build_report(rows: list[dict], output: Path) -> None:
             regrets = [row["utility_regret"] for row in sample]
             old_minus_new = [row["old_slot_target_rate"] - row["new_peak_hit_rate"] for row in sample]
             chance_difference = [row["new_peak_hit_rate"] - 0.25 for row in sample]
+            window_chance_difference = [row["new_peak_window_target_rate"] - 0.25 for row in sample]
+            allocation_lifts = [row["new_peak_allocation_lift"] for row in sample]
             lines.append(
                 f"- {condition}: mean utility regret {mean(regrets):.3f}, exact sign-flip "
                 f"p={exact_signflip_p(regrets):.4f}; new-peak hit "
@@ -260,9 +280,18 @@ def build_report(rows: list[dict], output: Path) -> None:
                 f"{mean(row['old_slot_target_rate'] for row in sample):.3f}; action agreement "
                 f"{mean(row['action_sequence_agreement_with_control'] for row in sample):.3f}; "
                 f"old-minus-new p={exact_signflip_p(old_minus_new):.4f}; new-hit versus 0.25 chance "
-                f"p={exact_signflip_p(chance_difference):.4f}."
+                f"p={exact_signflip_p(chance_difference):.4f}; seven-hour target rate "
+                f"{mean(row['new_peak_window_target_rate'] for row in sample):.3f} versus 0.25 chance "
+                f"p={exact_signflip_p(window_chance_difference):.4f}; event allocation lift "
+                f"{mean(allocation_lifts):.3f} units (p={exact_signflip_p(allocation_lifts):.4f})."
             )
         lines.append("")
+    forecast_shifted = [row for row in rows
+                        if row["condition"] == "Forecast-No-Time" and row["schedule"] in SHIFTED]
+    forecast_by_schedule = {
+        schedule: [row for row in forecast_shifted if row["schedule"] == schedule]
+        for schedule in SHIFTED
+    }
     lines.extend([
         "## Interpretation rules",
         "",
@@ -271,14 +300,58 @@ def build_report(rows: list[dict], output: Path) -> None:
         "- A positive utility regret means shifted peaks reduced performance relative to the same checkpoint's control.",
         "- Calendar-Only cannot observe demand or demand delta; identical actions across schedules are therefore expected "
         "and directly demonstrate lack of adaptation.",
+        "- The 0.25 target-rate reference is only a heuristic conditional on an active add among four nodes; the "
+        "learned action distribution is not uniform. Paired condition differences and event-allocation lift are the "
+        "primary evidence.",
         "",
         "## Main finding",
         "",
-        "Across all shifted schedules, no condition's new-peak hit rate is statistically distinguishable from the "
-        "0.25 chance rate of selecting one of four nodes. Calendar-Only preserves 100% of its control action sequence, "
-        "continues targeting obsolete old slots at rate 0.80, and targets new peaks only at rate 0.20–0.30. Original "
-        "also preserves 95.9–98.6% of its actions, retains a 0.75 old-slot rate, and falls from a 0.75 control hit rate "
-        "to 0.25–0.40 on shifted peaks. This supports fixed-schedule memorization rather than generalized forecasting.",
+        "Forecast-No-Time directly observes an oracle forecast, so its key test is whether its frozen policy changes "
+        "actions and targets the new peaks. Across the three shifted schedules its mean results are:",
+        "",
+    ])
+    for schedule in SHIFTED:
+        sample = forecast_by_schedule[schedule]
+        lines.append(
+            f"- {schedule}: utility regret {mean(row['utility_regret'] for row in sample):.3f}; "
+            f"new-peak hit {mean(row['new_peak_hit_rate'] for row in sample):.3f}; obsolete old-slot action "
+            f"{mean(row['old_slot_target_rate'] for row in sample):.3f}; action agreement with control "
+            f"{mean(row['action_sequence_agreement_with_control'] for row in sample):.3f}; allocation lift at the "
+            f"new event {mean(row['new_peak_allocation_lift'] for row in sample):.3f} units.")
+    lines.extend(["", "## Forecast-No-Time versus Original on shifted schedules", ""])
+    row_map = {(row["condition"], row["training_seed"], row["schedule"]): row for row in rows}
+    for schedule in SHIFTED:
+        utility_differences = [
+            row_map[("Forecast-No-Time", seed, schedule)]["utility"]
+            - row_map[("Original", seed, schedule)]["utility"] for seed in range(10, 20)]
+        gap_differences = [
+            row_map[("Forecast-No-Time", seed, schedule)]["remaining_gap"]
+            - row_map[("Original", seed, schedule)]["remaining_gap"] for seed in range(10, 20)]
+        window_differences = [
+            row_map[("Forecast-No-Time", seed, schedule)]["new_peak_window_target_rate"]
+            - row_map[("Original", seed, schedule)]["new_peak_window_target_rate"]
+            for seed in range(10, 20)]
+        allocation_lift_differences = [
+            row_map[("Forecast-No-Time", seed, schedule)]["new_peak_allocation_lift"]
+            - row_map[("Original", seed, schedule)]["new_peak_allocation_lift"]
+            for seed in range(10, 20)]
+        lines.append(
+            f"- {schedule}: Forecast − Original utility {mean(utility_differences):.3f} "
+            f"(p={exact_signflip_p(utility_differences):.4f}); remaining gap {mean(gap_differences):.3f} "
+            f"(p={exact_signflip_p(gap_differences):.4f}); seven-hour target-rate difference "
+            f"{mean(window_differences):.3f} (p={exact_signflip_p(window_differences):.4f}); event-allocation-lift "
+            f"difference {mean(allocation_lift_differences):.3f} units "
+            f"(p={exact_signflip_p(allocation_lift_differences):.4f}).")
+    lines.extend([
+        "",
+        "Forecast-No-Time significantly raises stressed-node allocation relative to its all-hour baseline on every "
+        "schedule (exact p=0.0059), and its lift exceeds Original by 0.568, 0.533, and 0.384 units on +6h, +1d, and "
+        "unseen schedules (p=0.0039, 0.0039, 0.0059). Together with lower action-sequence agreement and fewer obsolete "
+        "old-slot actions, this is evidence that the policy uses the forecast to alter allocation timing. However, the "
+        "behavioral adaptation does not improve utility or remaining gap significantly. The correct conclusion is "
+        "therefore partial: explicit forecast creates transferable anticipatory behavior, but the current reward/action/"
+        "learning design does not convert it into better end-to-end performance. The schedule oracle remains an "
+        "upper-bound input, not a deployable predictor.",
         "",
         "## Figures",
         "",
@@ -292,8 +365,9 @@ def build_report(rows: list[dict], output: Path) -> None:
 def main() -> None:
     args = parse_args()
     files = sorted(args.results.rglob("*.json"))
-    if len(files) != 120:
-        raise SystemExit(f"Expected 120 result files, found {len(files)}")
+    expected_files = len(CONDITIONS) * 10 * len(SCHEDULES)
+    if len(files) != expected_files:
+        raise SystemExit(f"Expected {expected_files} result files, found {len(files)}")
     per_eval, traces = [], []
     for path in files:
         rows, trace = parse_file(path)
