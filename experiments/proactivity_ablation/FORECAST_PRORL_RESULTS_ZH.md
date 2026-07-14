@@ -318,10 +318,22 @@ Inference ablation 將 forecast usage 拆成三部分並分別確認：
 
 實作採用 12 個 training scenarios 與 4 個 disjoint held-out scenarios，並以相同 seeds 配對訓練 Randomized-No-Time 與 Randomized-Forecast-No-Time。80 jobs／400 held-out episodes 顯示：Forecast event-allocation lift 增加 0.770（p=0.0020），any correct pre-peak add 增加 0.412（p=0.0020），但 utility 降低 2.362（p=0.0137）。這證明 forecast-to-action mapping 能泛化，同時將下一個瓶頸定位在 action／reward conversion。詳細結果見 `RANDOMIZED_SCHEDULE_EXPERIMENT_ZH.md`。
 
-### 下一優先：讓 action 與 reward 能利用提前資訊
+### 已完成：Frozen-policy movement-gating ablation
+
+相同 randomized Forecast-No-Time checkpoints 上的 160 jobs／800 episodes 已完成。Combined gate 在執行前取消「target 已涵蓋未來六小時需求」的 add，以及「remove 後將低於未來需求」的 remove。相較完全相同的 baseline，utility +32.631、remaining gap +44.750、surplus -182.130、movement cost -327.870，全部 exact p=0.0020；active sub-actions 從 336.3 降至 6.9。
+
+單獨 satisfied gate 會因 remove 繼續發生而惡化 gap；單獨 safe-remove gate 會因 add 繼續發生而累積 surplus。只有 combined 同時修復兩者，證明 action thrashing 與 add/remove interaction 是主要瓶頸。詳細結果見 `MOVEMENT_GATE_ABLATION_ZH.md`。
+
+### 下一優先：排除 static/no-move 解釋，再整合 action masking
+
+- always-wait policy control
+- current-only combined gate
+- forecast horizon 1／3／6 combined gates
+- 確認 forecast-aware gate 的增量價值後，移入 training-time action masking
+
+較長期方向仍包括：
 
 - quantity-aware action：node → quantity
-- 限制或懲罰無效的 continuous movement
 - 將 SLA remaining gap 改成 constrained objective
 - 分開報告 satisfaction gain 與 movement/surplus cost
 

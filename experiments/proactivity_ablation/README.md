@@ -110,3 +110,24 @@ python experiments/proactivity_ablation/analyze_randomized_heldout.py \
   experiments/proactivity_ablation/randomized_heldout_evaluations \
   --output-dir experiments/proactivity_ablation/randomized_heldout_analysis
 ```
+
+Diagnose action/reward conversion without retraining by applying inference-time
+movement gates to the same frozen randomized Forecast-No-Time checkpoints:
+
+```bash
+ENV=test python experiments/proactivity_ablation/run_movement_gate_ablation.py \
+  <randomized Forecast-No-Time training result root> \
+  --output-dir experiments/proactivity_ablation/movement_gate_evaluations
+
+python experiments/proactivity_ablation/analyze_movement_gate_ablation.py \
+  experiments/proactivity_ablation/movement_gate_evaluations \
+  --baseline-reference \
+    experiments/proactivity_ablation/randomized_heldout_evaluations/Randomized-Forecast-No-Time \
+  --output-dir experiments/proactivity_ablation/movement_gate_analysis
+```
+
+The four modes are `baseline`, `satisfied` (cancel an add when its target
+already covers the maximum current/six-hour forecast demand), `safe-remove`
+(cancel a remove that would make its source fall below that requirement), and
+`combined`. The normal rollout history stores executed, not proposed, actions;
+separate metadata records proposed, canceled, and executed sub-action counts.

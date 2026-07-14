@@ -133,4 +133,6 @@ Randomized training 已經完成原本要回答的問題：forecast usage 不只
 2. 線性 reward 將 remaining gap、surplus 與 movement cost 混合，提前累積資源可能被 surplus penalty 抵銷。
 3. Forecast policy 能把資源送到正確節點，但缺少精準 quantity 與停止搬動的機制。
 
-下一個最有價值的實驗應是 quantity-aware／movement-gated action ablation，或將 SLA remaining gap 改成 constrained objective；兩者都應保留目前 randomized paired protocol。
+下一個實驗已完成：frozen-policy movement-gated action ablation。Combined add/remove gate 將 utility 提高 32.631、remaining gap 提高 44.750、surplus 降低 182.130、movement cost 降低 327.870（四者 exact p=0.0020），並將平均 active sub-actions 從 336.3 降至 6.9。這確認 continuous action thrashing 與 add/remove 失衡是目前主要 action-conversion 瓶頸。完整設計與限制見 `MOVEMENT_GATE_ABLATION_ZH.md`。
+
+不過 combined gate 取消絕大多數動作，下一個必要 control 是 always-wait、current-only gate 與 forecast horizon 1／3／6；先排除 improvement 只是接近 static allocation，才能把額外效果歸因於 forecast-aware gating。通過後再將規則整合成 training-time action masking，而不是先換 LSTM。
