@@ -310,11 +310,13 @@ Inference ablation 將 forecast usage 拆成三部分並分別確認：
 
 相同 checkpoint 的 oracle、masked、node-permuted、time-reversed 共 800 episodes 已完成。結果確認模型使用 forecast 的存在、node identity 與 horizon order。
 
-### 第一優先：Randomized-schedule training
+### 第一優先：Randomized-schedule training（已實作，待遠端正式訓練）
 
 訓練期間隨機化 peak day/hour、stressed node、stress magnitude 與 duration，evaluation 使用 held-out combinations。現在已有足夠因果證據支持進入這一步。
 
 這比立即換 LSTM 更重要：Schedule Oracle 已證明對 frozen policy 有因果價值；下一個問題是 training distribution 能否讓這個價值穩定超越 No-Time／Original，而不是 forecast accuracy。
+
+實作採用 12 個 training scenarios 與 4 個 disjoint held-out scenarios，並以相同 seeds 配對訓練 Randomized-No-Time 與 Randomized-Forecast-No-Time。詳細規格、完整性規則及判定標準見 `RANDOMIZED_SCHEDULE_EXPERIMENT_ZH.md`。
 
 ### 第二優先：讓 action 與 reward 能利用提前資訊
 

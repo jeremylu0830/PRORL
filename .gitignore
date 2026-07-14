@@ -211,3 +211,5 @@ experiments/proactivity_ablation/forecast_analysis/
 experiments/proactivity_ablation/forecast_shifted_analysis/
 experiments/proactivity_ablation/forecast_inference_ablation/
 experiments/proactivity_ablation/forecast_inference_analysis/
+experiments/proactivity_ablation/randomized_heldout_evaluations/
+experiments/proactivity_ablation/randomized_heldout_analysis/

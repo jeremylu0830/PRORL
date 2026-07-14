@@ -71,3 +71,42 @@ anticipation; a shifted-peak evaluation is needed to test temporal generalizatio
 
 Shifted-peak evaluation must load the same trained checkpoints under a changed evaluation
 workload. It should not be approximated by retraining on shifted peaks.
+
+## 4. Randomized-schedule training
+
+The second-stage experiment trains a paired No-Time and Forecast-No-Time condition on
+the same episode-level randomized workload. The tracked scenario manifest contains 12
+training scenarios and four disjoint held-out combinations. The randomized model option
+is disabled by default, so legacy configurations retain their original behavior.
+
+Generate the two isolated configs and run the bounded paired smoke test:
+
+```bash
+python experiments/proactivity_ablation/generate_randomized_configs.py
+ENV=test python -m unittest experiments.proactivity_ablation.test_randomized_schedule -v
+ENV=test python experiments/proactivity_ablation/run_randomized_smoke.py --steps 192
+```
+
+On the remote training host, Redis and MongoDB must already be running. The launcher
+refuses non-empty experiment queues, schedules exactly 20 runs (two conditions by ten
+seeds), starts a validation worker, and audits the failed queue when training finishes:
+
+```bash
+python experiments/proactivity_ablation/launch_randomized_training.py \
+  --processes 2 \
+  --validation-processes 1 \
+  --queue proactivity-randomized-v1
+```
+
+After training, run evaluation-only held-out jobs and analysis:
+
+```bash
+ENV=test python experiments/proactivity_ablation/run_randomized_heldout_evaluations.py \
+  <randomized training result roots> \
+  --output-dir experiments/proactivity_ablation/randomized_heldout_evaluations \
+  --checkpoint best
+
+python experiments/proactivity_ablation/analyze_randomized_heldout.py \
+  experiments/proactivity_ablation/randomized_heldout_evaluations \
+  --output-dir experiments/proactivity_ablation/randomized_heldout_analysis
+```

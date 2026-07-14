@@ -7,9 +7,9 @@ from prorl.core.step import Step
 from prorl.emulator.data_structure import ModelTypes
 
 if sys.version_info >= (3, 8):
-    from typing import Dict, List, Optional, Union
+    from typing import Any, Dict, List, Optional, Union
 else:
-    from typing import Dict, List
+    from typing import Any, Dict, List
 
 from prorl.common.config import AbstractConfig, ConfigValueError, load_config_dict, set_sub_config
 from prorl.common.filesystem import get_data_base_dir, filter_out_path
@@ -248,6 +248,13 @@ class SyntheticModelConfig(AbstractConfig):
         ]
         self.demand_absolute_value: float = 80.0
         self.model_step_size: int = 3600
+        # Optional episode-level workload randomization. Keeping this disabled
+        # preserves the original synthetic model exactly. Each scenario contains
+        # one CoupleConfig override per demand couple.
+        self.schedule_randomization: Dict[str, Any] = {
+            'enabled': False,
+            'scenarios': [],
+        }
         # every steps the means are multiplied by increase_multiplier
         self.distribution_multipliers: List[float] = [1]  # [1, 1.5, 2, 0.6]
         super(SyntheticModelConfig, self).__init__('SyntheticModelConfig', **configs_to_override)

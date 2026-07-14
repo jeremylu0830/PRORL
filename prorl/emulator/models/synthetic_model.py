@@ -1,7 +1,7 @@
 import copy
 from dataclasses import dataclass
 from logging import Logger
-from typing import List, Optional, Dict, Union, Tuple
+from typing import List, Optional, Dict, Union, Tuple, Any
 
 import numpy as np
 from numpy.random import RandomState
@@ -147,7 +147,14 @@ class SyntheticModel(AbstractModel):
         model_config = self.emulator_config.model.synthetic_model
         self.episode_length: int = model_config.episode_length
         self.change_distribution_frequency: int = model_config.change_distribution_frequency
-        self.couples_config: List[CoupleConfig] = model_config.couples_config
+        self.base_couples_config: List[CoupleConfig] = copy.deepcopy(model_config.couples_config)
+        self.couples_config: List[CoupleConfig] = copy.deepcopy(self.base_couples_config)
+        self.schedule_randomization: Dict[str, Any] = copy.deepcopy(model_config.schedule_randomization)
+        self.schedule_scenarios: List[Dict[str, Any]] = self.schedule_randomization.get('scenarios', [])
+        self.randomize_schedule: bool = bool(self.schedule_randomization.get('enabled', False))
+        self.active_schedule_scenario_id: Optional[str] = None
+        self.schedule_scenario_history: List[str] = []
+        self._validate_schedule_randomization()
         # every steps the means are multiplied by increase_multiplier
         self.distribution_multipliers: List[float] = model_config.distribution_multipliers
         self.model_step_size: int = model_config.model_step_size
@@ -159,6 +166,64 @@ class SyntheticModel(AbstractModel):
         self.overall_steps = 0
 
         self._init_bs_status()
+
+    def _validate_schedule_randomization(self):
+        if not self.randomize_schedule:
+            return
+        if not self.schedule_scenarios:
+            raise ValueError('schedule_randomization requires at least one scenario when enabled')
+        expected_couples = len(self.base_couples_config)
+        allowed = {
+            'calm_load', 'calm_load_equal', 'stress_load', 'stress_every',
+            'keep_stress', 'swap_stress', 'std',
+        }
+        scenario_ids = set()
+        for index, scenario in enumerate(self.schedule_scenarios):
+            scenario_id = str(scenario.get('id', f'scenario-{index}'))
+            if scenario_id in scenario_ids:
+                raise ValueError(f'duplicate randomized schedule scenario id: {scenario_id}')
+            scenario_ids.add(scenario_id)
+            couples = scenario.get('couples')
+            if not isinstance(couples, list) or len(couples) != expected_couples:
+                raise ValueError(
+                    f'randomized schedule scenario {scenario_id} must define {expected_couples} couples')
+            for override in couples:
+                if not isinstance(override, dict):
+                    raise ValueError(
+                        f'randomized schedule scenario {scenario_id} couple overrides must be dictionaries')
+                unknown = set(override) - allowed
+                if unknown:
+                    raise ValueError(
+                        f'randomized schedule scenario {scenario_id} has unknown fields: {sorted(unknown)}')
+                schedule = override.get('stress_every')
+                if not isinstance(schedule, dict) or 'week_day' not in schedule or 'hour' not in schedule:
+                    raise ValueError(
+                        f'randomized schedule scenario {scenario_id} requires week_day and hour')
+                days = schedule['week_day'] if isinstance(schedule['week_day'], list) \
+                    else [schedule['week_day']]
+                hours = schedule['hour'] if isinstance(schedule['hour'], list) else [schedule['hour']]
+                if not days or any(not isinstance(day, int) or day < 0 or day > 6 for day in days):
+                    raise ValueError(f'randomized schedule scenario {scenario_id} has invalid week_day')
+                if not hours or any(not isinstance(hour, int) or hour < 0 or hour > 23 for hour in hours):
+                    raise ValueError(f'randomized schedule scenario {scenario_id} has invalid hour')
+                if 'keep_stress' in override and (
+                        not isinstance(override['keep_stress'], int) or override['keep_stress'] < 0):
+                    raise ValueError(f'randomized schedule scenario {scenario_id} has invalid keep_stress')
+                if 'stress_load' in override and not 0 <= override['stress_load'] <= 1:
+                    raise ValueError(f'randomized schedule scenario {scenario_id} has invalid stress_load')
+
+    def _sample_schedule_scenario(self):
+        self.couples_config = copy.deepcopy(self.base_couples_config)
+        self.active_schedule_scenario_id = None
+        if not self.randomize_schedule:
+            return
+        scenario_index = int(self.random.randint(0, len(self.schedule_scenarios)))
+        scenario = self.schedule_scenarios[scenario_index]
+        self.active_schedule_scenario_id = str(scenario.get('id', f'scenario-{scenario_index}'))
+        self.schedule_scenario_history.append(self.active_schedule_scenario_id)
+        for couple, overrides in zip(self.couples_config, scenario['couples']):
+            for key, value in overrides.items():
+                setattr(couple, key, copy.deepcopy(value))
 
     def _init_bs_status(self):
         self.couples_status: List[CoupleStatus] = []
@@ -296,6 +361,7 @@ class SyntheticModel(AbstractModel):
         super(SyntheticModel, self).reset(show_log)
         self.distribution_index = 0
         self.overall_steps = 0
+        self._sample_schedule_scenario()
         self._init_bs_status()
 
     def get_stop_step(self, step_size) -> Union[None, int, Step]:

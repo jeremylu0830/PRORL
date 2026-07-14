@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "description": "Episode-level synthetic demand schedules for forecast generalization training.",
+  "training": [
+    {"id": "train-00", "couples": [
+      {"stress_every": {"week_day": [1], "hour": [8]}, "stress_load": 0.70, "keep_stress": 0, "swap_stress": false},
+      {"stress_every": {"week_day": [4], "hour": [14]}, "stress_load": 0.75, "keep_stress": 1, "swap_stress": true}
+    ]},
+    {"id": "train-01", "couples": [
+      {"stress_every": {"week_day": [2], "hour": [11]}, "stress_load": 0.80, "keep_stress": 1, "swap_stress": true},
+      {"stress_every": {"week_day": [5], "hour": [17]}, "stress_load": 0.70, "keep_stress": 0, "swap_stress": false}
+    ]},
+    {"id": "train-02", "couples": [
+      {"stress_every": {"week_day": [3], "hour": [15]}, "stress_load": 0.75, "keep_stress": 2, "swap_stress": false},
+      {"stress_every": {"week_day": [1], "hour": [20]}, "stress_load": 0.80, "keep_stress": 0, "swap_stress": true}
+    ]},
+    {"id": "train-03", "couples": [
+      {"stress_every": {"week_day": [4], "hour": [18]}, "stress_load": 0.70, "keep_stress": 1, "swap_stress": true},
+      {"stress_every": {"week_day": [2], "hour": [9]}, "stress_load": 0.75, "keep_stress": 2, "swap_stress": false}
+    ]},
+    {"id": "train-04", "couples": [
+      {"stress_every": {"week_day": [5], "hour": [7]}, "stress_load": 0.80, "keep_stress": 0, "swap_stress": false},
+      {"stress_every": {"week_day": [3], "hour": [13]}, "stress_load": 0.70, "keep_stress": 1, "swap_stress": true}
+    ]},
+    {"id": "train-05", "couples": [
+      {"stress_every": {"week_day": [1], "hour": [12]}, "stress_load": 0.75, "keep_stress": 1, "swap_stress": true},
+      {"stress_every": {"week_day": [5], "hour": [19]}, "stress_load": 0.80, "keep_stress": 2, "swap_stress": false}
+    ]},
+    {"id": "train-06", "couples": [
+      {"stress_every": {"week_day": [2], "hour": [16]}, "stress_load": 0.70, "keep_stress": 2, "swap_stress": false},
+      {"stress_every": {"week_day": [4], "hour": [10]}, "stress_load": 0.75, "keep_stress": 0, "swap_stress": true}
+    ]},
+    {"id": "train-07", "couples": [
+      {"stress_every": {"week_day": [3], "hour": [9]}, "stress_load": 0.80, "keep_stress": 0, "swap_stress": true},
+      {"stress_every": {"week_day": [1], "hour": [18]}, "stress_load": 0.70, "keep_stress": 2, "swap_stress": false}
+    ]},
+    {"id": "train-08", "couples": [
+      {"stress_every": {"week_day": [4], "hour": [13]}, "stress_load": 0.75, "keep_stress": 1, "swap_stress": false},
+      {"stress_every": {"week_day": [2], "hour": [7]}, "stress_load": 0.80, "keep_stress": 0, "swap_stress": true}
+    ]},
+    {"id": "train-09", "couples": [
+      {"stress_every": {"week_day": [5], "hour": [20]}, "stress_load": 0.70, "keep_stress": 2, "swap_stress": true},
+      {"stress_every": {"week_day": [3], "hour": [11]}, "stress_load": 0.75, "keep_stress": 1, "swap_stress": false}
+    ]},
+    {"id": "train-10", "couples": [
+      {"stress_every": {"week_day": [1], "hour": [17]}, "stress_load": 0.80, "keep_stress": 1, "swap_stress": false},
+      {"stress_every": {"week_day": [4], "hour": [8]}, "stress_load": 0.70, "keep_stress": 0, "swap_stress": true}
+    ]},
+    {"id": "train-11", "couples": [
+      {"stress_every": {"week_day": [2], "hour": [19]}, "stress_load": 0.75, "keep_stress": 0, "swap_stress": true},
+      {"stress_every": {"week_day": [5], "hour": [12]}, "stress_load": 0.80, "keep_stress": 2, "swap_stress": false}
+    ]}
+  ],
+  "held_out": [
+    {"id": "heldout-00", "couples": [
+      {"stress_every": {"week_day": [1], "hour": [14]}, "stress_load": 0.80, "keep_stress": 2, "swap_stress": true},
+      {"stress_every": {"week_day": [5], "hour": [8]}, "stress_load": 0.75, "keep_stress": 1, "swap_stress": false}
+    ]},
+    {"id": "heldout-01", "couples": [
+      {"stress_every": {"week_day": [4], "hour": [11]}, "stress_load": 0.70, "keep_stress": 1, "swap_stress": false},
+      {"stress_every": {"week_day": [2], "hour": [20]}, "stress_load": 0.80, "keep_stress": 2, "swap_stress": true}
+    ]},
+    {"id": "heldout-02", "couples": [
+      {"stress_every": {"week_day": [5], "hour": [15]}, "stress_load": 0.75, "keep_stress": 0, "swap_stress": true},
+      {"stress_every": {"week_day": [1], "hour": [10]}, "stress_load": 0.70, "keep_stress": 2, "swap_stress": false}
+    ]},
+    {"id": "heldout-03", "couples": [
+      {"stress_every": {"week_day": [3], "hour": [18]}, "stress_load": 0.80, "keep_stress": 1, "swap_stress": false},
+      {"stress_every": {"week_day": [4], "hour": [7]}, "stress_load": 0.75, "keep_stress": 0, "swap_stress": true}
+    ]}
+  ]
+}
