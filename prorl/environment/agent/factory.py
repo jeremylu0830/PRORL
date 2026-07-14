@@ -7,8 +7,8 @@ from prorl import SingleRunConfig
 from prorl.common.data_structure import RunMode
 from prorl.environment.action_space import ActionSpaceWrapper, ActionType
 from prorl.environment.agent import AgentType
-from prorl.environment.agent.baseline import RandomAgent, GreedyOptimalAgent, \
-    ExhaustiveSearchAgent, OracleAgent
+from prorl.environment.agent.baseline import RandomAgent, WaitAgent, GreedyOptimalAgent, \
+    SamplingOptimalAgent, ExhaustiveSearchAgent, OracleAgent
 from prorl.environment.agent.dqn import DoubleDQNAgent, DoubleDQNFullSpaceAgent
 from prorl.environment.node_groups import NodeGroups
 from prorl.environment.state_builder import StateType
@@ -16,10 +16,12 @@ from prorl.environment.wrapper import EnvWrapper
 
 AGENTS_MAPPING = {
     AgentType.Random: RandomAgent,
+    AgentType.Wait: WaitAgent,
     AgentType.DoubleDQN: DoubleDQNAgent,
     AgentType.DoubleDQNFullSpace: DoubleDQNFullSpaceAgent,
     AgentType.Heuristic: GreedyOptimalAgent,
     AgentType.Greedy: ExhaustiveSearchAgent,
+    AgentType.SamplingOptimal: SamplingOptimalAgent,
     AgentType.Oracle: OracleAgent,
 }
 

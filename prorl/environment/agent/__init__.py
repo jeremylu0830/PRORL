@@ -3,6 +3,7 @@ from prorl.common.enum_utils import ExtendedEnum
 
 class AgentType(str, ExtendedEnum):
     Random = 'random'
+    Wait = 'wait'
     DoubleDQN = 'prorl'
     DoubleDQNFullSpace = 'prorl-no-split'
     Heuristic = 'heuristic'
@@ -20,6 +21,8 @@ class AgentType(str, ExtendedEnum):
         legacy_names = {
             'double-dqn': cls.DoubleDQN,
             'double-dqn-full-space': cls.DoubleDQNFullSpace,
+            'greedy-optimal': cls.Heuristic,
+            'exhaustive-search': cls.Greedy,
         }
         return legacy_names.get(value)
 
@@ -30,7 +33,14 @@ class AgentType(str, ExtendedEnum):
 
     @staticmethod
     def is_baseline(agent_type: 'AgentType') -> bool:
-        baselines = [AgentType.Random, AgentType.Heuristic, AgentType.Greedy, AgentType.Oracle]
+        baselines = [
+            AgentType.Random,
+            AgentType.Wait,
+            AgentType.Heuristic,
+            AgentType.Greedy,
+            AgentType.Oracle,
+            AgentType.SamplingOptimal,
+        ]
         return agent_type in baselines
 
     @staticmethod
@@ -42,4 +52,3 @@ class AgentType(str, ExtendedEnum):
     def is_policy_gradient(agent_type: 'AgentType') -> bool:
         pg_methods = [AgentType.Reinforce, AgentType.TD_AC, AgentType.MC_AC]
         return agent_type in pg_methods
-

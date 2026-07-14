@@ -1,0 +1,26 @@
+{
+  "protocol": "tim-realdata-necessity-audit-v1",
+  "source_configs": [
+    "config/tim_dataset/12-nodes/1-12_nodes-weights_0.6_0.3_0.1-baselines.yaml",
+    "config/tim_dataset/12-nodes/3-12_nodes-weights_0.75_0.2_0.05-baselines.yaml",
+    "config/tim_dataset/12-nodes/5-12_nodes-weights_0.9_0.1_0-baselines.yaml",
+    "config/tim_dataset/12-nodes/7-12_nodes-weights_0.35_0.6_0.05-baselines.yaml"
+  ],
+  "loads": [
+    0.8
+  ],
+  "agents": [
+    "wait",
+    "random",
+    "greedy-optimal",
+    "sampling-optimal",
+    "exhaustive-search"
+  ],
+  "generated_configs": [
+    "experiments/proactivity_ablation/generated_tim_realdata_audit/load_0.8-1-12_nodes-weights_0.6_0.3_0.1-baselines.yaml",
+    "experiments/proactivity_ablation/generated_tim_realdata_audit/load_0.8-3-12_nodes-weights_0.75_0.2_0.05-baselines.yaml",
+    "experiments/proactivity_ablation/generated_tim_realdata_audit/load_0.8-5-12_nodes-weights_0.9_0.1_0-baselines.yaml",
+    "experiments/proactivity_ablation/generated_tim_realdata_audit/load_0.8-7-12_nodes-weights_0.35_0.6_0.05-baselines.yaml"
+  ],
+  "note": "wait preserves the configured initial allocation for the full episode"
+}

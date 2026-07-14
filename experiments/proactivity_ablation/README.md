@@ -147,3 +147,15 @@ python experiments/proactivity_ablation/analyze_movement_gate_controls.py \
     experiments/proactivity_ablation/randomized_heldout_evaluations/Randomized-Forecast-No-Time \
   --output-dir experiments/proactivity_ablation/movement_gate_control_analysis
 ```
+
+## TIM real-data benchmark necessity audit
+
+The synthetic `always-wait` result does not establish the same conclusion on
+the paper's TIM trace. The isolated real-data audit, its preflight, and the
+pre-registered interpretation rules are documented in
+`TIM_REALDATA_NECESSITY_AUDIT_ZH.md`.
+
+```bash
+.venv/bin/python experiments/proactivity_ablation/generate_tim_realdata_audit.py --loads 0.8
+.venv/bin/python experiments/proactivity_ablation/tim_realdata_preflight.py
+```
