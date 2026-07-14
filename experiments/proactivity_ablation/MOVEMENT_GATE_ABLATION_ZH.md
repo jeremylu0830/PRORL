@@ -77,14 +77,16 @@ PRORL 的 pool action 是 add 與 remove 兩個獨立子動作；gate 只取消�
 
 Combined gate 使用 oracle forecast，而且初始 allocation 可能已接近這組 synthetic workloads 的合理配置。因為它取消約 98.0% adds 與 89.4% removes，目前不能直接宣稱 improvement 全部來自 forecast；它也可能部分近似 static/no-move policy。
 
-因此下一個必要 control 不需訓練：在相同 checkpoints 與 held-out protocol 比較：
+後續必要 control 已完成，使用相同 checkpoints 與 held-out protocol 比較：
 
 1. `always-wait` static policy；
 2. `current-only combined gate`；
 3. forecast horizon 1／3／6 combined gates；
 4. 原 `forecast-h6 combined gate`。
 
-若 h6 明顯勝過 current-only 與 always-wait，才能將額外收益歸因於 forecast-aware gating。之後再把 combined rule 移入 action masking／training，檢驗 DQN 是否能 end-to-end 學會受約束的行為。
+結果顯示 always-wait utility 166.032，高於 forecast-h6 的 165.586；先前 combined gate 的 utility gain 主要來自 movement suppression。Forecast horizon 越長仍會單調改善 remaining gap 與 event allocation lift，但 surplus/cost 同時增加，使 utility 在 h1 後下降。完整結果見 `MOVEMENT_GATE_CONTROLS_ZH.md`。
+
+因此不應立即把 h6 hard gate 移入 training。應先建立 imbalanced initial allocation／resource scarcity 的 movement-necessary benchmark，使 always-wait 明顯失敗，再評估 forecast-aware masking 與 hierarchical WAIT/MOVE 架構。
 
 ## 重現指令
 

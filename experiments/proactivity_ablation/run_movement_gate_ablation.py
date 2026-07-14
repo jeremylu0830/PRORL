@@ -21,7 +21,11 @@ if str(PROJECT_ROOT) not in sys.path:
 from prorl.common.encoders import NumpyEncoder  # noqa: E402
 from prorl.run.runner import TestRunner  # noqa: E402
 
-from experiments.proactivity_ablation.movement_gate import MovementGate, apply_movement_gate  # noqa: E402
+from experiments.proactivity_ablation.movement_gate import (  # noqa: E402
+    MovementGate,
+    apply_movement_gate,
+    required_demand_description,
+)
 from experiments.proactivity_ablation.run_forecast_inference_ablation import agent_tensors  # noqa: E402
 from experiments.proactivity_ablation.run_randomized_heldout_evaluations import (  # noqa: E402
     DEFAULT_MANIFEST,
@@ -106,7 +110,7 @@ def run_one(record: dict, scenario: dict, mode: str,
         "source_full_data": str(record["full_data"]),
         "evaluation_seeds": evaluation_seeds,
         "gate_counts": {str(seed): dict(runner.gate_counts[seed]) for seed in evaluation_seeds},
-        "required_demand": "per-node max(current, oracle forecast t+1..t+6)",
+        "required_demand": required_demand_description(mode),
         "elapsed_seconds": time.time() - started,
         "learning_enabled": False,
         "weights_changed": False,

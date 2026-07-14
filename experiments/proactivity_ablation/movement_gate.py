@@ -11,6 +11,10 @@ from prorl.environment.action_space import Action
 
 class MovementGate(str, Enum):
     BASELINE = "baseline"
+    ALWAYS_WAIT = "always-wait"
+    COMBINED_CURRENT = "combined-current"
+    COMBINED_H1 = "combined-h1"
+    COMBINED_H3 = "combined-h3"
     SATISFIED = "satisfied"
     SAFE_REMOVE = "safe-remove"
     COMBINED = "combined"
@@ -61,6 +65,37 @@ def moved_capacity(action: Action, env, resource: str) -> float:
     return quantity * capacity_per_unit
 
 
+def gate_forecast(mode: MovementGate, forecast: Sequence) -> Sequence:
+    """Select the forecast prefix visible to a control gate."""
+    values = forecast or []
+    horizons = {
+        MovementGate.COMBINED_CURRENT: 0,
+        MovementGate.COMBINED_H1: 1,
+        MovementGate.COMBINED_H3: 3,
+    }
+    if mode not in horizons:
+        return values
+    horizon = horizons[mode]
+    if len(values) < horizon:
+        raise ValueError(f"Gate {mode.value} requires {horizon} forecast steps, got {len(values)}")
+    return values[:horizon]
+
+
+def required_demand_description(mode: MovementGate | str) -> str:
+    gate = MovementGate(mode)
+    if gate is MovementGate.BASELINE:
+        return "none (policy action unchanged)"
+    if gate is MovementGate.ALWAYS_WAIT:
+        return "none (all proposed movement forced to wait)"
+    if gate is MovementGate.COMBINED_CURRENT:
+        return "per-node current demand only"
+    if gate is MovementGate.COMBINED_H1:
+        return "per-node max(current, oracle forecast t+1)"
+    if gate is MovementGate.COMBINED_H3:
+        return "per-node max(current, oracle forecast t+1..t+3)"
+    return "per-node max(current, oracle forecast t+1..t+6)"
+
+
 def apply_movement_gate(actions: list[Action], env, resource: str,
                         mode: MovementGate | str) -> GateDecision:
     """Replace gated sub-actions with wait in place, then report the decision."""
@@ -75,10 +110,22 @@ def apply_movement_gate(actions: list[Action], env, resource: str,
     canceled_add = False
     canceled_remove = False
 
-    if gate is not MovementGate.BASELINE and (proposed_add or proposed_remove):
-        required = required_capacities(env.current_demand, env.current_demand_forecast, resource)
+    if gate is MovementGate.ALWAYS_WAIT:
+        if proposed_add:
+            actions[0] = wait_action(wrapper)
+            canceled_add = True
+        if proposed_remove:
+            actions[1] = wait_action(wrapper)
+            canceled_remove = True
 
-        if gate in (MovementGate.SATISFIED, MovementGate.COMBINED) and proposed_add:
+    if gate not in (MovementGate.BASELINE, MovementGate.ALWAYS_WAIT) and (proposed_add or proposed_remove):
+        forecast = gate_forecast(gate, env.current_demand_forecast)
+        required = required_capacities(env.current_demand, forecast, resource)
+
+        if gate in (
+                MovementGate.SATISFIED, MovementGate.COMBINED_CURRENT,
+                MovementGate.COMBINED_H1, MovementGate.COMBINED_H3,
+                MovementGate.COMBINED) and proposed_add:
             target = add_action.add_node
             if target >= len(env.nodes):
                 raise ValueError(f"Invalid add target {target}")
@@ -87,7 +134,10 @@ def apply_movement_gate(actions: list[Action], env, resource: str,
                 actions[0] = wait_action(wrapper)
                 canceled_add = True
 
-        if gate in (MovementGate.SAFE_REMOVE, MovementGate.COMBINED) and proposed_remove:
+        if gate in (
+                MovementGate.SAFE_REMOVE, MovementGate.COMBINED_CURRENT,
+                MovementGate.COMBINED_H1, MovementGate.COMBINED_H3,
+                MovementGate.COMBINED) and proposed_remove:
             source = remove_action.remove_node
             if source >= len(env.nodes):
                 raise ValueError(f"Invalid remove source {source}")

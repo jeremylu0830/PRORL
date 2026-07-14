@@ -216,3 +216,4 @@ experiments/proactivity_ablation/randomized_heldout_evaluations/
 experiments/proactivity_ablation/randomized_heldout_analysis/
 experiments/proactivity_ablation/movement_gate_evaluations/
 experiments/proactivity_ablation/movement_gate_analysis/
+experiments/proactivity_ablation/movement_gate_control_analysis/

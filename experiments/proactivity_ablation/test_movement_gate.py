@@ -107,6 +107,42 @@ class MovementGateTest(unittest.TestCase):
         self.assertEqual(env.current_demand.values, current_before)
         self.assertEqual([item.values for item in env.current_demand_forecast], forecast_before)
 
+    def test_always_wait_cancels_both_subactions(self):
+        env = environment()
+        actions = split_actions(env)
+        decision = apply_movement_gate(actions, env, "res_1", "always-wait")
+        self.assertTrue(decision.canceled_add)
+        self.assertTrue(decision.canceled_remove)
+        self.assertFalse(decision.executed_add)
+        self.assertFalse(decision.executed_remove)
+        self.assertTrue(env.action_space_wrapper.is_wait_action(actions[0]))
+        self.assertTrue(env.action_space_wrapper.is_wait_action(actions[1]))
+
+    def test_current_only_differs_from_forecast_horizons(self):
+        env = environment(capacities=(30, 30), current=(20, 20),
+                          forecast=((20, 20), (40, 20), (50, 20)))
+
+        current_actions = split_actions(env, add=0)
+        current = apply_movement_gate(current_actions, env, "res_1", "combined-current")
+        self.assertTrue(current.canceled_add)
+
+        h1_actions = split_actions(env, add=0)
+        h1 = apply_movement_gate(h1_actions, env, "res_1", "combined-h1")
+        self.assertTrue(h1.canceled_add)
+
+        h3_actions = split_actions(env, add=0)
+        h3 = apply_movement_gate(h3_actions, env, "res_1", "combined-h3")
+        self.assertFalse(h3.canceled_add)
+
+        h6_actions = split_actions(env, add=0)
+        h6 = apply_movement_gate(h6_actions, env, "res_1", "combined")
+        self.assertFalse(h6.canceled_add)
+
+    def test_horizon_gate_requires_enough_forecast_steps(self):
+        env = environment(forecast=((20, 20),))
+        with self.assertRaisesRegex(ValueError, "requires 3 forecast steps"):
+            apply_movement_gate(split_actions(env), env, "res_1", "combined-h3")
+
     def test_requires_two_split_actions(self):
         env = environment()
         with self.assertRaisesRegex(ValueError, "expects two split actions"):

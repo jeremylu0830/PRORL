@@ -131,3 +131,19 @@ already covers the maximum current/six-hour forecast demand), `safe-remove`
 (cancel a remove that would make its source fall below that requirement), and
 `combined`. The normal rollout history stores executed, not proposed, actions;
 separate metadata records proposed, canceled, and executed sub-action counts.
+
+Run the static/current/forecast-horizon controls (the existing `baseline` and
+`combined` directories provide policy and h6 results):
+
+```bash
+ENV=test python experiments/proactivity_ablation/run_movement_gate_ablation.py \
+  <randomized Forecast-No-Time training result root> \
+  --output-dir experiments/proactivity_ablation/movement_gate_evaluations \
+  --modes always-wait combined-current combined-h1 combined-h3
+
+python experiments/proactivity_ablation/analyze_movement_gate_controls.py \
+  experiments/proactivity_ablation/movement_gate_evaluations \
+  --baseline-reference \
+    experiments/proactivity_ablation/randomized_heldout_evaluations/Randomized-Forecast-No-Time \
+  --output-dir experiments/proactivity_ablation/movement_gate_control_analysis
+```

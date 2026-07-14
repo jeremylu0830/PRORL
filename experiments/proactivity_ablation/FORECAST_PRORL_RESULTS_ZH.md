@@ -324,12 +324,20 @@ Inference ablation 將 forecast usage 拆成三部分並分別確認：
 
 單獨 satisfied gate 會因 remove 繼續發生而惡化 gap；單獨 safe-remove gate 會因 add 繼續發生而累積 surplus。只有 combined 同時修復兩者，證明 action thrashing 與 add/remove interaction 是主要瓶頸。詳細結果見 `MOVEMENT_GATE_ABLATION_ZH.md`。
 
-### 下一優先：排除 static/no-move 解釋，再整合 action masking
+### 已完成：Static/no-move 與 forecast-horizon controls
 
-- always-wait policy control
-- current-only combined gate
-- forecast horizon 1／3／6 combined gates
-- 確認 forecast-aware gate 的增量價值後，移入 training-time action masking
+240 jobs／1,200 episodes 顯示 always-wait utility 為 166.032，顯著高於原 policy 33.078（p=0.0020），也高於 h6 gate 的 165.586。這確認 combined gate 先前的大部分 utility gain 來自停止 action thrashing，而不是六小時 forecast 本身。
+
+Forecast 仍有清楚的 SLA 增量：相較 current-only，h1 utility +0.172、remaining gap +2.805、event allocation lift +0.579；horizon 延長到 h3/h6 時，gap 與 allocation lift繼續改善，但 surplus/cost 增加，使 utility 下降。詳細結果見 `MOVEMENT_GATE_CONTROLS_ZH.md`。
+
+### 下一優先：Movement-necessary benchmark
+
+- imbalanced initial allocation
+- resource scarcity
+- global/local overdemand mixture
+- always-wait 必須明顯失敗的 admission criterion
+
+完成後才適合比較 training-time action masking、hierarchical WAIT/MOVE 與 quantity-aware action。直接在目前 benchmark 訓練 hard mask，容易只得到 no-op policy。
 
 較長期方向仍包括：
 
