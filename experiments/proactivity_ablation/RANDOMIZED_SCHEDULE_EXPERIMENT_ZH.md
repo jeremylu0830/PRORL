@@ -95,3 +95,42 @@ Redis 與 MongoDB 啟動後，由 `launch_randomized_training.py` 統一產生 c
 ```
 
 建議先使用 2 個 concurrent training processes；確認 CPU、RAM 與 GPU memory 穩定後才提高到 3–4。
+
+## 正式結果（2026-07-14）
+
+完整性稽核：
+
+- 20/20 training runs 完整，兩組各含 seeds 10–19。
+- 每組都訓練 172,800 iterations，使用相同 12-scenario training bank。
+- 20/20 best-validation checkpoints 存在。
+- Held-out evaluation 完成 80 jobs／400 episodes。
+- 所有 jobs 都禁止 learning，前後 73 個 agent tensors 完全一致。
+
+四個 held-out scenarios 聚合後，Randomized-Forecast-No-Time 相較 Randomized-No-Time：
+
+| Metric | Forecast − No-Time | 95% CI | Exact p |
+|---|---:|---:|---:|
+| Utility | -2.362 | [-3.999, -0.724] | 0.0137 |
+| Remaining gap | +6.565 | [-39.031, 52.161] | 0.7441 |
+| Surplus | +52.855 | [-31.590, 137.300] | 0.1855 |
+| Movement cost | -0.435 | [-1.337, 0.467] | 0.3438 |
+| Event allocation | +0.881 | [0.405, 1.358] | 0.0020 |
+| Event allocation lift | +0.770 | [0.397, 1.143] | 0.0020 |
+| Pre-peak target rate | +0.085 | [0.036, 0.135] | 0.0078 |
+| Any correct pre-peak add | +0.412 | [0.318, 0.507] | 0.0020 |
+
+所有 10 個 paired training seeds 的 held-out allocation-lift difference 都為正。這提供比 fixed-schedule 與 same-checkpoint inference ablation 更強的證據：模型已學到可跨未見 scenario combinations 泛化的 forecast-to-action mapping。
+
+但 end-to-end objective 沒有改善。Utility 反而顯著降低 2.362；remaining gap、gap hours 與 movement cost 沒有顯著差異。主要張力是 Forecast policy 在 event 時多配置約 0.881 units，同時 surplus 呈增加方向。未做 multiplicity correction 的 exploratory scenario 分析中，heldout-01 的 surplus 增加 92.0（p=0.0215），utility 降低 4.263（p=0.0117）；主要結論仍以跨四個 scenarios 的 paired aggregate 為準。
+
+## 更新後的研究判斷
+
+Randomized training 已經完成原本要回答的問題：forecast usage 不只是背固定 schedule，也能泛化到 held-out workload combinations。因此下一步不應優先換 LSTM；Oracle 已排除 forecast accuracy，randomized evaluation 也排除固定 calendar memorization。
+
+現在最合理的瓶頸是「知道未來需求」無法被現有 action／reward 設計有效利用：
+
+1. Agent 每步可移動的 quantity 有限，且容易持續搬動。
+2. 線性 reward 將 remaining gap、surplus 與 movement cost 混合，提前累積資源可能被 surplus penalty 抵銷。
+3. Forecast policy 能把資源送到正確節點，但缺少精準 quantity 與停止搬動的機制。
+
+下一個最有價值的實驗應是 quantity-aware／movement-gated action ablation，或將 SLA remaining gap 改成 constrained objective；兩者都應保留目前 randomized paired protocol。

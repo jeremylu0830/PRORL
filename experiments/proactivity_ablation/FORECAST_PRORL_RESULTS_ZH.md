@@ -302,7 +302,7 @@ Inference ablation 將 forecast usage 拆成三部分並分別確認：
 3. 每小時只能移動有限數量的資源，可能限制 forecast 的實際價值。
 4. 24 維 raw horizon forecast 對 DQN 而言較稀疏；policy 可能只學到粗略 bias，沒有學到精準 quantity/timing。
 5. Reward 同時混合 gap、surplus 與 movement cost。提前配置改善 demand readiness，但可能被 surplus 或不必要 movement 抵銷。
-6. Training 只使用固定 schedule；即使拿到 forecast，網路仍可能學到特定 pattern，而不是一般 forecast-to-action mapping。
+6. 原始 Forecast training 只使用固定 schedule；randomized-schedule 實驗已排除這個限制，並證明一般 forecast-to-action mapping 可以學到，但 objective conversion 仍失敗。
 
 ## 9. 下一步優先順序
 
@@ -310,15 +310,15 @@ Inference ablation 將 forecast usage 拆成三部分並分別確認：
 
 相同 checkpoint 的 oracle、masked、node-permuted、time-reversed 共 800 episodes 已完成。結果確認模型使用 forecast 的存在、node identity 與 horizon order。
 
-### 第一優先：Randomized-schedule training（已實作，待遠端正式訓練）
+### 已完成：Randomized-schedule training
 
-訓練期間隨機化 peak day/hour、stressed node、stress magnitude 與 duration，evaluation 使用 held-out combinations。現在已有足夠因果證據支持進入這一步。
+訓練期間已隨機化 peak day/hour、stressed node、stress magnitude 與 duration，evaluation 使用 held-out combinations。
 
-這比立即換 LSTM 更重要：Schedule Oracle 已證明對 frozen policy 有因果價值；下一個問題是 training distribution 能否讓這個價值穩定超越 No-Time／Original，而不是 forecast accuracy。
+這一步比立即換 LSTM 更重要：Schedule Oracle 先證明 forecast 對 frozen policy 有因果價值，randomized training 再確認 behavior 可以跨 schedule 泛化；因此目前問題不是 forecast accuracy 或 calendar memorization。
 
-實作採用 12 個 training scenarios 與 4 個 disjoint held-out scenarios，並以相同 seeds 配對訓練 Randomized-No-Time 與 Randomized-Forecast-No-Time。詳細規格、完整性規則及判定標準見 `RANDOMIZED_SCHEDULE_EXPERIMENT_ZH.md`。
+實作採用 12 個 training scenarios 與 4 個 disjoint held-out scenarios，並以相同 seeds 配對訓練 Randomized-No-Time 與 Randomized-Forecast-No-Time。80 jobs／400 held-out episodes 顯示：Forecast event-allocation lift 增加 0.770（p=0.0020），any correct pre-peak add 增加 0.412（p=0.0020），但 utility 降低 2.362（p=0.0137）。這證明 forecast-to-action mapping 能泛化，同時將下一個瓶頸定位在 action／reward conversion。詳細結果見 `RANDOMIZED_SCHEDULE_EXPERIMENT_ZH.md`。
 
-### 第二優先：讓 action 與 reward 能利用提前資訊
+### 下一優先：讓 action 與 reward 能利用提前資訊
 
 - quantity-aware action：node → quantity
 - 限制或懲罰無效的 continuous movement
@@ -327,7 +327,7 @@ Inference ablation 將 forecast usage 拆成三部分並分別確認：
 
 ## 10. 論文可使用的結論文字
 
-> The original calendar-conditioned policy retained 95.9–98.6% of its control action sequence under temporal demand shifts and continued targeting obsolete peak slots, supporting fixed-schedule memorization. Forecast-No-Time instead produced a significant stressed-node allocation lift on all shifted schedules. Same-checkpoint counterfactual evaluation further showed that masking the forecast eliminated this lift, permuting node forecasts redirected resources toward the falsely indicated nodes, and reversing the six-hour horizon weakened event-time allocation. These interventions establish that the policy uses forecast availability, spatial identity, and temporal order. Nevertheless, independently trained Forecast-No-Time policies did not significantly outperform Original or No-Time in aggregate utility. Explicit forecast therefore enabled transferable anticipatory behavior and was causally useful within the learned policy, but the current training distribution, reward, and action design did not reliably convert that information into superior end-to-end performance.
+> The original calendar-conditioned policy retained 95.9–98.6% of its control action sequence under temporal demand shifts and continued targeting obsolete peak slots, supporting fixed-schedule memorization. Same-checkpoint counterfactual evaluation showed that masking the forecast eliminated anticipatory allocation, permuting node forecasts redirected resources toward falsely indicated nodes, and reversing the six-hour horizon weakened event-time allocation. Randomized-schedule training then established behavioral generalization on held-out workload combinations: relative to paired No-Time policies, Forecast policies increased event-time allocation by 0.881 units and allocation lift by 0.770 units (both exact p=0.0020), with a positive lift difference for all ten training seeds. However, utility decreased by 2.362 (p=0.0137), while remaining-gap improvement was not significant. Explicit forecast is therefore causally used and supports a transferable forecast-to-action mapping, but the current reward and action design fails to convert correct anticipatory allocation into superior end-to-end performance.
 
 ## 11. 可重現指令
 

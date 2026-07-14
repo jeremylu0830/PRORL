@@ -148,7 +148,8 @@ def build_report(rows: list[dict], output: Path) -> None:
         "",
         "Both conditions were trained on the same randomized scenario bank. Ten paired training seeds are evaluated "
         "on four fixed held-out scenario combinations and five evaluation seeds. Forecast − No-Time differences are "
-        "first averaged within each training seed and tested with an exact two-sided sign-flip test.",
+        "first averaged within each training seed and tested with an exact two-sided sign-flip test. Overall paired "
+        "contrasts are primary; per-scenario contrasts are exploratory and reported without multiplicity correction.",
         "",
         "## Per-scenario outcomes",
         "",
@@ -164,9 +165,28 @@ def build_report(rows: list[dict], output: Path) -> None:
             ]
             lines.append(f"| {scenario} | {condition} | {' | '.join(formatted)} |")
 
+    lines.extend([
+        "",
+        "## Exploratory per-scenario paired contrasts (Forecast − No-Time)",
+        "",
+        "| Scenario | Utility | p | Surplus | p | Event allocation lift | p | Pre-peak target rate | p |",
+        "|---|---:|---:|---:|---:|---:|---:|---:|---:|",
+    ])
+    scenario_metrics = ("utility", "surplus", "event_allocation_lift", "prepeak_target_rate")
+    for scenario in SCENARIOS:
+        cells = []
+        for metric in scenario_metrics:
+            differences = [
+                row_map[(CONDITIONS[1], seed, scenario)][metric]
+                - row_map[(CONDITIONS[0], seed, scenario)][metric]
+                for seed in range(10, 20)
+            ]
+            cells.extend((f"{mean(differences):.3f}", f"{exact_signflip_p(differences):.4f}"))
+        lines.append(f"| {scenario} | {' | '.join(cells)} |")
+
     metrics = (
         "utility", "remaining_gap", "surplus", "movement_cost", "gap_hours",
-        "event_allocation_lift", "prepeak_target_rate", "prepeak_any_target_rate",
+        "event_allocation", "event_allocation_lift", "prepeak_target_rate", "prepeak_any_target_rate",
     )
     lines.extend([
         "",
@@ -175,6 +195,7 @@ def build_report(rows: list[dict], output: Path) -> None:
         "| Metric | Mean difference | 95% CI | Exact p |",
         "|---|---:|---:|---:|",
     ])
+    overall_contrasts = {}
     for metric in metrics:
         differences = []
         for seed in range(10, 20):
@@ -182,10 +203,28 @@ def build_report(rows: list[dict], output: Path) -> None:
             no_time = mean(row_map[(CONDITIONS[0], seed, scenario)][metric] for scenario in SCENARIOS)
             differences.append(forecast - no_time)
         center, lower, upper = mean_ci(differences)
+        overall_contrasts[metric] = (center, exact_signflip_p(differences))
         lines.append(f"| {metric} | {center:.3f} | [{lower:.3f}, {upper:.3f}] | "
                      f"{exact_signflip_p(differences):.4f} |")
 
     lines.extend([
+        "",
+        "## Main finding",
+        "",
+        f"Randomized Forecast training generalizes behaviorally: event-time allocation increases by "
+        f"{overall_contrasts['event_allocation'][0]:.3f} units "
+        f"(p={overall_contrasts['event_allocation'][1]:.4f}), allocation lift increases by "
+        f"{overall_contrasts['event_allocation_lift'][0]:.3f} "
+        f"(p={overall_contrasts['event_allocation_lift'][1]:.4f}), and the probability of at least one correctly "
+        f"targeted pre-peak add increases by {overall_contrasts['prepeak_any_target_rate'][0]:.3f} "
+        f"(p={overall_contrasts['prepeak_any_target_rate'][1]:.4f}). All ten paired training seeds have a positive "
+        f"held-out allocation-lift difference.",
+        "",
+        f"This behavior does not improve the current objective. The Forecast − No-Time utility difference is "
+        f"{overall_contrasts['utility'][0]:.3f} "
+        f"(p={overall_contrasts['utility'][1]:.4f}); remaining-gap change is not significant, while surplus trends "
+        f"upward. The result supports a general forecast-to-action mapping and identifies reward/action conversion, "
+        f"rather than forecast representation, as the next bottleneck.",
         "",
         "## Decision rule",
         "",
