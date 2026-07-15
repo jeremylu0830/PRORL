@@ -45,7 +45,9 @@ class AgentType(str, ExtendedEnum):
 
     @staticmethod
     def is_mc_method(agent_type: 'AgentType') -> bool:
-        mc_methods = [AgentType.Reinforce, AgentType.MC_AC, AgentType.SamplingOptimal]
+        # SamplingOptimal samples candidate actions at each environment step;
+        # it is a baseline, not an episodic Monte Carlo learning algorithm.
+        mc_methods = [AgentType.Reinforce, AgentType.MC_AC]
         return agent_type in mc_methods
 
     @staticmethod

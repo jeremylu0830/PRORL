@@ -17,6 +17,10 @@ class TimRealDataAuditTests(unittest.TestCase):
         self.assertEqual(AgentType("greedy-optimal"), AgentType.Heuristic)
         self.assertEqual(AgentType("exhaustive-search"), AgentType.Greedy)
 
+    def test_sampling_optimal_uses_standard_baseline_rollout(self):
+        self.assertTrue(AgentType.is_baseline(AgentType.SamplingOptimal))
+        self.assertFalse(AgentType.is_mc_method(AgentType.SamplingOptimal))
+
     def test_audit_config_preserves_source_and_adds_wait(self):
         source = {
             "multi_run_name": "paper",
