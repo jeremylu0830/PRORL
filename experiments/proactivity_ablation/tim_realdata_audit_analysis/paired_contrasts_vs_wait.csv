@@ -1,0 +1,113 @@
+gap_weight,surplus_weight,cost_weight,treatment,control,metric,mean_difference,ci95_lower,ci95_upper,exact_signflip_p,inference_scope,wins,ties,losses
+0.35,0.6,0.05,random,wait,utility_total,-61.872999572753905,-74.9033928761457,-48.84260626936211,0.001953125,policy RNG on one fixed traffic week,0,0,10
+0.35,0.6,0.05,random,wait,remaining_gap_total,-1054.8,-1289.1908902567675,-820.4091097432325,0.001953125,policy RNG on one fixed traffic week,0,0,10
+0.35,0.6,0.05,random,wait,surplus_total,739.1,440.3976968457726,1037.8023031542275,0.00390625,policy RNG on one fixed traffic week,9,0,1
+0.35,0.6,0.05,random,wait,movement_cost_total,308.2,303.7931296184253,312.60687038157465,0.001953125,policy RNG on one fixed traffic week,10,0,0
+0.35,0.6,0.05,random,wait,movement_count,308.2,303.7931296184253,312.60687038157465,0.001953125,policy RNG on one fixed traffic week,10,0,0
+0.35,0.6,0.05,random,wait,satisfied_hours,-58.8,-68.50172711222079,-49.0982728877792,0.001953125,policy RNG on one fixed traffic week,0,0,10
+0.35,0.6,0.05,random,wait,sla_violation_hours,58.8,49.0982728877792,68.50172711222079,0.001953125,policy RNG on one fixed traffic week,10,0,0
+0.35,0.6,0.05,greedy-optimal,wait,utility_total,99.81666564941406,99.81666564941406,99.81666564941406,,duplicated deterministic outcome; descriptive only,10,0,0
+0.35,0.6,0.05,greedy-optimal,wait,remaining_gap_total,-1618.0,-1618.0,-1618.0,,duplicated deterministic outcome; descriptive only,0,0,10
+0.35,0.6,0.05,greedy-optimal,wait,surplus_total,-3579.0,-3579.0,-3579.0,,duplicated deterministic outcome; descriptive only,0,0,10
+0.35,0.6,0.05,greedy-optimal,wait,movement_cost_total,222.0,222.0,222.0,,duplicated deterministic outcome; descriptive only,10,0,0
+0.35,0.6,0.05,greedy-optimal,wait,movement_count,222.0,222.0,222.0,,duplicated deterministic outcome; descriptive only,10,0,0
+0.35,0.6,0.05,greedy-optimal,wait,satisfied_hours,-17.0,-17.0,-17.0,,duplicated deterministic outcome; descriptive only,0,0,10
+0.35,0.6,0.05,greedy-optimal,wait,sla_violation_hours,17.0,17.0,17.0,,duplicated deterministic outcome; descriptive only,10,0,0
+0.35,0.6,0.05,sampling-optimal,wait,utility_total,80.24866371154785,75.35196286288412,85.14536456021158,0.001953125,policy RNG on one fixed traffic week,10,0,0
+0.35,0.6,0.05,sampling-optimal,wait,remaining_gap_total,-2061.4,-2310.773277833532,-1812.026722166468,0.001953125,policy RNG on one fixed traffic week,0,0,10
+0.35,0.6,0.05,sampling-optimal,wait,surplus_total,-3358.7,-3571.460056048968,-3145.9399439510316,0.001953125,policy RNG on one fixed traffic week,0,0,10
+0.35,0.6,0.05,sampling-optimal,wait,movement_cost_total,239.2,236.59242423695878,241.8075757630412,0.001953125,policy RNG on one fixed traffic week,10,0,0
+0.35,0.6,0.05,sampling-optimal,wait,movement_count,239.2,236.59242423695878,241.8075757630412,0.001953125,policy RNG on one fixed traffic week,10,0,0
+0.35,0.6,0.05,sampling-optimal,wait,satisfied_hours,-44.8,-50.5304,-39.069599999999994,0.001953125,policy RNG on one fixed traffic week,0,0,10
+0.35,0.6,0.05,sampling-optimal,wait,sla_violation_hours,44.8,39.069599999999994,50.5304,0.001953125,policy RNG on one fixed traffic week,10,0,0
+0.35,0.6,0.05,exhaustive-search,wait,utility_total,106.71999702453613,104.8083723771368,108.63162167193545,0.001953125,policy RNG on one fixed traffic week,10,0,0
+0.35,0.6,0.05,exhaustive-search,wait,remaining_gap_total,-4705.8,-4814.897729271328,-4596.702270728672,0.001953125,policy RNG on one fixed traffic week,0,0,10
+0.35,0.6,0.05,exhaustive-search,wait,surplus_total,-5469.3,-5506.176767173384,-5432.423232826616,0.001953125,policy RNG on one fixed traffic week,0,0,10
+0.35,0.6,0.05,exhaustive-search,wait,movement_cost_total,88.4,87.89985298161442,88.9001470183856,0.001953125,policy RNG on one fixed traffic week,10,0,0
+0.35,0.6,0.05,exhaustive-search,wait,movement_count,88.4,87.89985298161442,88.9001470183856,0.001953125,policy RNG on one fixed traffic week,10,0,0
+0.35,0.6,0.05,exhaustive-search,wait,satisfied_hours,-71.6,-73.76438717423662,-69.43561282576337,0.001953125,policy RNG on one fixed traffic week,0,0,10
+0.35,0.6,0.05,exhaustive-search,wait,sla_violation_hours,71.6,69.43561282576337,73.76438717423662,0.001953125,policy RNG on one fixed traffic week,10,0,0
+0.6,0.3,0.1,random,wait,utility_total,-72.37999954223633,-83.34103191277063,-61.41896717170204,0.001953125,policy RNG on one fixed traffic week,0,0,10
+0.6,0.3,0.1,random,wait,remaining_gap_total,-1054.8,-1289.1908902567675,-820.4091097432325,0.001953125,policy RNG on one fixed traffic week,0,0,10
+0.6,0.3,0.1,random,wait,surplus_total,739.1,440.3976968457726,1037.8023031542275,0.00390625,policy RNG on one fixed traffic week,9,0,1
+0.6,0.3,0.1,random,wait,movement_cost_total,308.2,303.7931296184253,312.60687038157465,0.001953125,policy RNG on one fixed traffic week,10,0,0
+0.6,0.3,0.1,random,wait,movement_count,308.2,303.7931296184253,312.60687038157465,0.001953125,policy RNG on one fixed traffic week,10,0,0
+0.6,0.3,0.1,random,wait,satisfied_hours,-58.8,-68.50172711222079,-49.0982728877792,0.001953125,policy RNG on one fixed traffic week,0,0,10
+0.6,0.3,0.1,random,wait,sla_violation_hours,58.8,49.0982728877792,68.50172711222079,0.001953125,policy RNG on one fixed traffic week,10,0,0
+0.6,0.3,0.1,greedy-optimal,wait,utility_total,-4.260002136230469,-4.260002136230469,-4.260002136230469,,duplicated deterministic outcome; descriptive only,0,0,10
+0.6,0.3,0.1,greedy-optimal,wait,remaining_gap_total,-1618.0,-1618.0,-1618.0,,duplicated deterministic outcome; descriptive only,0,0,10
+0.6,0.3,0.1,greedy-optimal,wait,surplus_total,-3579.0,-3579.0,-3579.0,,duplicated deterministic outcome; descriptive only,0,0,10
+0.6,0.3,0.1,greedy-optimal,wait,movement_cost_total,222.0,222.0,222.0,,duplicated deterministic outcome; descriptive only,10,0,0
+0.6,0.3,0.1,greedy-optimal,wait,movement_count,222.0,222.0,222.0,,duplicated deterministic outcome; descriptive only,10,0,0
+0.6,0.3,0.1,greedy-optimal,wait,satisfied_hours,-17.0,-17.0,-17.0,,duplicated deterministic outcome; descriptive only,0,0,10
+0.6,0.3,0.1,greedy-optimal,wait,sla_violation_hours,17.0,17.0,17.0,,duplicated deterministic outcome; descriptive only,10,0,0
+0.6,0.3,0.1,sampling-optimal,wait,utility_total,-8.445000839233398,-11.32656850643436,-5.563433172032436,0.001953125,policy RNG on one fixed traffic week,0,0,10
+0.6,0.3,0.1,sampling-optimal,wait,remaining_gap_total,41.9,-103.68076497408578,187.4807649740858,0.53125,policy RNG on one fixed traffic week,4,0,6
+0.6,0.3,0.1,sampling-optimal,wait,surplus_total,55.1,-347.8867890073321,458.08678900733213,0.75,policy RNG on one fixed traffic week,5,0,5
+0.6,0.3,0.1,sampling-optimal,wait,movement_cost_total,180.3,175.26397986898385,185.33602013101617,0.001953125,policy RNG on one fixed traffic week,10,0,0
+0.6,0.3,0.1,sampling-optimal,wait,movement_count,180.3,175.26397986898385,185.33602013101617,0.001953125,policy RNG on one fixed traffic week,10,0,0
+0.6,0.3,0.1,sampling-optimal,wait,satisfied_hours,-11.8,-17.725499823643574,-5.874500176356429,0.001953125,policy RNG on one fixed traffic week,0,0,10
+0.6,0.3,0.1,sampling-optimal,wait,sla_violation_hours,11.8,5.874500176356429,17.725499823643574,0.001953125,policy RNG on one fixed traffic week,10,0,0
+0.6,0.3,0.1,exhaustive-search,wait,utility_total,0.0,0.0,0.0,,duplicated deterministic outcome; descriptive only,0,10,0
+0.6,0.3,0.1,exhaustive-search,wait,remaining_gap_total,0.0,0.0,0.0,,duplicated deterministic outcome; descriptive only,0,10,0
+0.6,0.3,0.1,exhaustive-search,wait,surplus_total,0.0,0.0,0.0,,duplicated deterministic outcome; descriptive only,0,10,0
+0.6,0.3,0.1,exhaustive-search,wait,movement_cost_total,0.0,0.0,0.0,,duplicated deterministic outcome; descriptive only,0,10,0
+0.6,0.3,0.1,exhaustive-search,wait,movement_count,0.0,0.0,0.0,,duplicated deterministic outcome; descriptive only,0,10,0
+0.6,0.3,0.1,exhaustive-search,wait,satisfied_hours,0.0,0.0,0.0,,duplicated deterministic outcome; descriptive only,0,10,0
+0.6,0.3,0.1,exhaustive-search,wait,sla_violation_hours,0.0,0.0,0.0,,duplicated deterministic outcome; descriptive only,0,10,0
+0.75,0.2,0.05,random,wait,utility_total,-70.29700088500977,-82.54117680195507,-58.052824968064456,0.001953125,policy RNG on one fixed traffic week,0,0,10
+0.75,0.2,0.05,random,wait,remaining_gap_total,-1054.8,-1289.1908902567675,-820.4091097432325,0.001953125,policy RNG on one fixed traffic week,0,0,10
+0.75,0.2,0.05,random,wait,surplus_total,739.1,440.3976968457726,1037.8023031542275,0.00390625,policy RNG on one fixed traffic week,9,0,1
+0.75,0.2,0.05,random,wait,movement_cost_total,308.2,303.7931296184253,312.60687038157465,0.001953125,policy RNG on one fixed traffic week,10,0,0
+0.75,0.2,0.05,random,wait,movement_count,308.2,303.7931296184253,312.60687038157465,0.001953125,policy RNG on one fixed traffic week,10,0,0
+0.75,0.2,0.05,random,wait,satisfied_hours,-58.8,-68.50172711222079,-49.0982728877792,0.001953125,policy RNG on one fixed traffic week,0,0,10
+0.75,0.2,0.05,random,wait,sla_violation_hours,58.8,49.0982728877792,68.50172711222079,0.001953125,policy RNG on one fixed traffic week,10,0,0
+0.75,0.2,0.05,greedy-optimal,wait,utility_total,-38.743337631225586,-38.743337631225586,-38.743337631225586,,duplicated deterministic outcome; descriptive only,0,0,10
+0.75,0.2,0.05,greedy-optimal,wait,remaining_gap_total,-1618.0,-1618.0,-1618.0,,duplicated deterministic outcome; descriptive only,0,0,10
+0.75,0.2,0.05,greedy-optimal,wait,surplus_total,-3579.0,-3579.0,-3579.0,,duplicated deterministic outcome; descriptive only,0,0,10
+0.75,0.2,0.05,greedy-optimal,wait,movement_cost_total,222.0,222.0,222.0,,duplicated deterministic outcome; descriptive only,10,0,0
+0.75,0.2,0.05,greedy-optimal,wait,movement_count,222.0,222.0,222.0,,duplicated deterministic outcome; descriptive only,10,0,0
+0.75,0.2,0.05,greedy-optimal,wait,satisfied_hours,-17.0,-17.0,-17.0,,duplicated deterministic outcome; descriptive only,0,0,10
+0.75,0.2,0.05,greedy-optimal,wait,sla_violation_hours,17.0,17.0,17.0,,duplicated deterministic outcome; descriptive only,10,0,0
+0.75,0.2,0.05,sampling-optimal,wait,utility_total,2.044166851043701,-1.2007577810393086,5.289091483126711,0.19140625,policy RNG on one fixed traffic week,7,0,3
+0.75,0.2,0.05,sampling-optimal,wait,remaining_gap_total,468.3,399.3075167372561,537.2924832627439,0.001953125,policy RNG on one fixed traffic week,10,0,0
+0.75,0.2,0.05,sampling-optimal,wait,surplus_total,1215.7,854.6103446660927,1576.7896553339074,0.001953125,policy RNG on one fixed traffic week,10,0,0
+0.75,0.2,0.05,sampling-optimal,wait,movement_cost_total,206.3,199.34805457731437,213.25194542268565,0.001953125,policy RNG on one fixed traffic week,10,0,0
+0.75,0.2,0.05,sampling-optimal,wait,movement_count,206.3,199.34805457731437,213.25194542268565,0.001953125,policy RNG on one fixed traffic week,10,0,0
+0.75,0.2,0.05,sampling-optimal,wait,satisfied_hours,0.8,-2.7971411092699716,4.397141109269971,0.65625,policy RNG on one fixed traffic week,6,0,4
+0.75,0.2,0.05,sampling-optimal,wait,sla_violation_hours,-0.8,-4.397141109269971,2.7971411092699716,0.65625,policy RNG on one fixed traffic week,4,0,6
+0.75,0.2,0.05,exhaustive-search,wait,utility_total,2.5910001754760743,2.227283708358137,2.9547166425940117,0.001953125,policy RNG on one fixed traffic week,10,0,0
+0.75,0.2,0.05,exhaustive-search,wait,remaining_gap_total,801.6,795.1560564372428,808.0439435627572,0.001953125,policy RNG on one fixed traffic week,10,0,0
+0.75,0.2,0.05,exhaustive-search,wait,surplus_total,2731.8,2707.8118955613413,2755.788104438659,0.001953125,policy RNG on one fixed traffic week,10,0,0
+0.75,0.2,0.05,exhaustive-search,wait,movement_cost_total,42.6,41.9968,43.2032,0.001953125,policy RNG on one fixed traffic week,10,0,0
+0.75,0.2,0.05,exhaustive-search,wait,movement_count,42.6,41.9968,43.2032,0.001953125,policy RNG on one fixed traffic week,10,0,0
+0.75,0.2,0.05,exhaustive-search,wait,satisfied_hours,29.3,28.285596746850644,30.314403253149358,0.001953125,policy RNG on one fixed traffic week,10,0,0
+0.75,0.2,0.05,exhaustive-search,wait,sla_violation_hours,-29.3,-30.314403253149358,-28.285596746850644,0.001953125,policy RNG on one fixed traffic week,0,0,10
+0.9,0.1,0.0,random,wait,utility_total,-68.21400146484375,-82.35719108826284,-54.07081184142466,0.001953125,policy RNG on one fixed traffic week,0,0,10
+0.9,0.1,0.0,random,wait,remaining_gap_total,-1054.8,-1289.1908902567675,-820.4091097432325,0.001953125,policy RNG on one fixed traffic week,0,0,10
+0.9,0.1,0.0,random,wait,surplus_total,739.1,440.3976968457726,1037.8023031542275,0.00390625,policy RNG on one fixed traffic week,9,0,1
+0.9,0.1,0.0,random,wait,movement_cost_total,308.2,303.7931296184253,312.60687038157465,0.001953125,policy RNG on one fixed traffic week,10,0,0
+0.9,0.1,0.0,random,wait,movement_count,308.2,303.7931296184253,312.60687038157465,0.001953125,policy RNG on one fixed traffic week,10,0,0
+0.9,0.1,0.0,random,wait,satisfied_hours,-58.8,-68.50172711222079,-49.0982728877792,0.001953125,policy RNG on one fixed traffic week,0,0,10
+0.9,0.1,0.0,random,wait,sla_violation_hours,58.8,49.0982728877792,68.50172711222079,0.001953125,policy RNG on one fixed traffic week,10,0,0
+0.9,0.1,0.0,greedy-optimal,wait,utility_total,-73.2266731262207,-73.2266731262207,-73.2266731262207,,duplicated deterministic outcome; descriptive only,0,0,10
+0.9,0.1,0.0,greedy-optimal,wait,remaining_gap_total,-1618.0,-1618.0,-1618.0,,duplicated deterministic outcome; descriptive only,0,0,10
+0.9,0.1,0.0,greedy-optimal,wait,surplus_total,-3579.0,-3579.0,-3579.0,,duplicated deterministic outcome; descriptive only,0,0,10
+0.9,0.1,0.0,greedy-optimal,wait,movement_cost_total,222.0,222.0,222.0,,duplicated deterministic outcome; descriptive only,10,0,0
+0.9,0.1,0.0,greedy-optimal,wait,movement_count,222.0,222.0,222.0,,duplicated deterministic outcome; descriptive only,10,0,0
+0.9,0.1,0.0,greedy-optimal,wait,satisfied_hours,-17.0,-17.0,-17.0,,duplicated deterministic outcome; descriptive only,0,0,10
+0.9,0.1,0.0,greedy-optimal,wait,sla_violation_hours,17.0,17.0,17.0,,duplicated deterministic outcome; descriptive only,10,0,0
+0.9,0.1,0.0,sampling-optimal,wait,utility_total,-48.10000057220459,-52.52694837829543,-43.673052766113756,0.001953125,policy RNG on one fixed traffic week,0,0,10
+0.9,0.1,0.0,sampling-optimal,wait,remaining_gap_total,-1052.6,-1137.7801111706247,-967.4198888293752,0.001953125,policy RNG on one fixed traffic week,0,0,10
+0.9,0.1,0.0,sampling-optimal,wait,surplus_total,-2258.6,-2398.900822252188,-2118.299177747812,0.001953125,policy RNG on one fixed traffic week,0,0,10
+0.9,0.1,0.0,sampling-optimal,wait,movement_cost_total,279.6,276.0602129103575,283.13978708964254,0.001953125,policy RNG on one fixed traffic week,10,0,0
+0.9,0.1,0.0,sampling-optimal,wait,movement_count,279.6,276.0602129103575,283.13978708964254,0.001953125,policy RNG on one fixed traffic week,10,0,0
+0.9,0.1,0.0,sampling-optimal,wait,satisfied_hours,-25.9,-29.106938483975018,-22.69306151602498,0.001953125,policy RNG on one fixed traffic week,0,0,10
+0.9,0.1,0.0,sampling-optimal,wait,sla_violation_hours,25.9,22.69306151602498,29.106938483975018,0.001953125,policy RNG on one fixed traffic week,10,0,0
+0.9,0.1,0.0,exhaustive-search,wait,utility_total,-74.85066528320313,-76.6724923173782,-73.02883824902806,0.001953125,policy RNG on one fixed traffic week,0,0,10
+0.9,0.1,0.0,exhaustive-search,wait,remaining_gap_total,-1622.1,-1658.2675652932292,-1585.9324347067707,0.001953125,policy RNG on one fixed traffic week,0,0,10
+0.9,0.1,0.0,exhaustive-search,wait,surplus_total,-3372.3,-3440.2119642151515,-3304.388035784849,0.001953125,policy RNG on one fixed traffic week,0,0,10
+0.9,0.1,0.0,exhaustive-search,wait,movement_cost_total,237.0,234.63960664295124,239.36039335704876,0.001953125,policy RNG on one fixed traffic week,10,0,0
+0.9,0.1,0.0,exhaustive-search,wait,movement_count,237.0,234.63960664295124,239.36039335704876,0.001953125,policy RNG on one fixed traffic week,10,0,0
+0.9,0.1,0.0,exhaustive-search,wait,satisfied_hours,-23.4,-26.225237094475435,-20.57476290552456,0.001953125,policy RNG on one fixed traffic week,0,0,10
+0.9,0.1,0.0,exhaustive-search,wait,sla_violation_hours,23.4,20.57476290552456,26.225237094475435,0.001953125,policy RNG on one fixed traffic week,10,0,0

@@ -159,3 +159,12 @@ pre-registered interpretation rules are documented in
 .venv/bin/python experiments/proactivity_ablation/generate_tim_realdata_audit.py --loads 0.8
 .venv/bin/python experiments/proactivity_ablation/tim_realdata_preflight.py
 ```
+
+The completed 200-job audit analysis and its statistical limitations are in
+`TIM_REALDATA_AUDIT_RESULTS_ZH.md`. Regenerate the paired summaries with:
+
+```bash
+.venv/bin/python experiments/proactivity_ablation/analyze_tim_realdata_audit.py \
+  <extracted-audit>/all_runs.csv \
+  --output-dir experiments/proactivity_ablation/tim_realdata_audit_analysis
+```
