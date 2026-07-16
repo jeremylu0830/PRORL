@@ -463,6 +463,9 @@ class AgentAbstract:
         self.is_multi_reward: bool = self.config.environment.reward.multi_reward
         self.requires_validation: bool = False
         self.save_agent_state: bool = False
+        # Reward-side primal-dual state is mirrored here so it follows model
+        # checkpoints. Legacy agents and checkpoints keep an empty mapping.
+        self.constraint_state: Dict[str, Any] = {}
         self.selected_actions: Dict[ActionType, Dict[int, int]] = {
             ActionType.Add: {},
             ActionType.Remove: {},
@@ -871,12 +874,20 @@ class AgentAbstract:
     def get_agent_state(self) -> Dict[str, Any]:
         return {
             'selected_actions': self.selected_actions,
+            'constraint_state': copy.deepcopy(self.constraint_state),
         }
 
     def load_agent_state(self, agent_state: Dict[str, Any]):
         self.selected_actions_loaded = copy.deepcopy(agent_state['selected_actions'])
         self.stats_loaded = True
         self.selected_actions = agent_state['selected_actions']
+        self.constraint_state = copy.deepcopy(agent_state.get('constraint_state', {}))
+
+    def set_constraint_state(self, state: Optional[Dict[str, Any]]):
+        self.constraint_state = copy.deepcopy(state or {})
+
+    def get_constraint_state(self) -> Dict[str, Any]:
+        return copy.deepcopy(self.constraint_state)
 
     def set_mode(self, mode: RunMode):
         self.mode: RunMode = mode

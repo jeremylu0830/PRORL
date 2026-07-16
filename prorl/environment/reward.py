@@ -24,6 +24,7 @@ class RewardFunctionType(str, ExtendedEnum):
     MultiObjectivesSimple = 'multi-objectives-simple'
     ResourceUtilization = 'resource-utilization'
     GapSurplusCost = 'gap-surplus-cost'
+    ConstrainedGapSurplusCost = 'constrained-gap-surplus-cost'
 
 
 class RewardFunctionTypeError(Exception):
@@ -142,6 +143,14 @@ class RewardAbstract:
         pass
 
     def reset(self):
+        pass
+
+    def get_constraint_state(self) -> Dict[str, Any]:
+        """Return checkpointable constraint state, if this reward owns one."""
+        return {}
+
+    def load_constraint_state(self, state: Optional[Dict[str, Any]]):
+        """Restore checkpointed constraint state without affecting legacy rewards."""
         pass
 
     def compute_action_cost(self, nodes: List[Node], resource: str,
@@ -810,12 +819,170 @@ class GapSurplusCostReward(RewardAbstract):
         return reward
 
 
+class ConstrainedGapSurplusCostReward(GapSurplusCostReward):
+    """Surplus/cost objective with an hourly SLA Lagrangian constraint.
+
+    The primal objective deliberately excludes remaining gap.  A binary SLA cost
+    represents whether any node has a negative capacity-demand delta.  During
+    training, the multiplier is updated from non-null reward steps in fixed-size
+    windows; validation and evaluation keep the checkpointed multiplier frozen.
+    """
+
+    def __init__(
+            self,
+            resources: List[EnvResource],
+            env_config,
+            run_mode: RunMode,
+            disable_cost: bool = False,
+            objective_weights: Tuple[float, float] = (0.5, 0.5),
+            sla_target_rate: float = 0.1,
+            dual_learning_rate: float = 0.05,
+            dual_initial_lambda: float = 1.0,
+            dual_max_lambda: float = 20.0,
+            dual_update_interval: int = 168,
+            **kwargs
+    ):
+        # Legacy configs carry the three-objective weights key.  It is ignored
+        # only for this explicitly selected reward type.
+        kwargs.pop('weights', None)
+        super(ConstrainedGapSurplusCostReward, self).__init__(
+            resources=resources,
+            env_config=env_config,
+            run_mode=run_mode,
+            disable_cost=disable_cost,
+            weights=(0.0, float(objective_weights[0]), float(objective_weights[1])),
+            **kwargs
+        )
+        self.name = RewardFunctionType.ConstrainedGapSurplusCost
+        self.objective_weights = tuple(float(value) for value in objective_weights)
+        if len(self.objective_weights) != 2 or abs(1 - sum(self.objective_weights)) >= 1e-14:
+            raise ValueError('objective_weights must contain [surplus, movement_cost] and sum to 1')
+        self.sla_target_rate = float(sla_target_rate)
+        if not 0 <= self.sla_target_rate <= 1:
+            raise ValueError('sla_target_rate must be between 0 and 1')
+        self.dual_learning_rate = float(dual_learning_rate)
+        self.dual_max_lambda = float(dual_max_lambda)
+        self.dual_update_interval = int(dual_update_interval)
+        if self.dual_learning_rate < 0 or self.dual_max_lambda < 0 or self.dual_update_interval <= 0:
+            raise ValueError('dual parameters must be non-negative and dual_update_interval must be positive')
+        self.lagrangian_multiplier = float(np.clip(
+            dual_initial_lambda, 0, self.dual_max_lambda))
+        self.dual_window_cost = 0.0
+        self.dual_window_count = 0
+        self.dual_updates = 0
+        self.last_observed_sla_rate = 0.0
+        self.last_sla_cost: Optional[float] = None
+        self.last_base_reward: Optional[float] = None
+        self.last_constraint_penalty: Optional[float] = None
+        self.last_lagrangian_multiplier: Optional[float] = None
+        self.last_next_lagrangian_multiplier: Optional[float] = None
+
+    @staticmethod
+    def lagrangian_reward(base_reward: float, multiplier: float,
+                          sla_cost: float, target_rate: float) -> float:
+        return base_reward - multiplier * (sla_cost - target_rate)
+
+    def _observe_constraint(self, sla_cost: float):
+        if self.run_mode != RunMode.Train:
+            return
+        self.dual_window_cost += float(sla_cost)
+        self.dual_window_count += 1
+        if self.dual_window_count >= self.dual_update_interval:
+            self.last_observed_sla_rate = self.dual_window_cost / self.dual_window_count
+            updated = self.lagrangian_multiplier + self.dual_learning_rate * (
+                self.last_observed_sla_rate - self.sla_target_rate)
+            self.lagrangian_multiplier = float(np.clip(updated, 0, self.dual_max_lambda))
+            self.dual_window_cost = 0.0
+            self.dual_window_count = 0
+            self.dual_updates += 1
+
+    def _compute(self, state_wrapper: Dict[str, State], actions: List[Action], step: Step,
+                 demand: StepData, nodes: List[Node], resource: str,
+                 penalty: Union[int, float] = 0, current_budget=0,
+                 action_space_wrapper: Optional[ActionSpaceWrapper] = None,
+                 node_groups: Optional[NodeGroups] = None, **kwargs) -> Union[float, Tuple[float, float]]:
+        action_cost = self.compute_action_cost(nodes, resource, actions, action_space_wrapper)
+        self.step_action_cost += action_cost
+        action_cost = self.step_action_cost
+        if self.disable_cost:
+            action_cost = 0
+
+        deltas = np.array(self.get_nodes_deltas(nodes, demand, resource))
+        self.last_cost = action_cost
+        self.last_remaining_gap = self._gap_from_deltas(deltas)
+        self.last_surplus = self._surplus_from_deltas(deltas)
+        surplus_normalized = normalize_scalar(
+            -self.last_surplus, 0, self.remaining_gap_max_factor[resource],
+            a=self.normalization_range[0], b=self.normalization_range[1])
+        action_cost_normalized = normalize_scalar(
+            -action_cost, 0, -self.max_cost[resource],
+            a=self.normalization_range[0], b=self.normalization_range[1])
+        self.last_base_reward = (
+            self.objective_weights[0] * surplus_normalized
+            + self.objective_weights[1] * action_cost_normalized
+        )
+        self.last_sla_cost = 1.0 if self.last_remaining_gap < 0 else 0.0
+        multiplier = self.lagrangian_multiplier
+        self.last_constraint_penalty = multiplier * (self.last_sla_cost - self.sla_target_rate)
+        reward = self.lagrangian_reward(
+            self.last_base_reward, multiplier, self.last_sla_cost, self.sla_target_rate)
+        self.last_lagrangian_multiplier = multiplier
+        if not self.is_a_null_step(step):
+            self._observe_constraint(self.last_sla_cost)
+            self.step_action_cost = 0
+        self.last_next_lagrangian_multiplier = self.lagrangian_multiplier
+        return reward
+
+    def reward_info(self) -> Optional[Dict[str, Any]]:
+        info = super(ConstrainedGapSurplusCostReward, self).reward_info()
+        if info is not None:
+            info.update({
+                'sla_cost': self.last_sla_cost,
+                'sla_target_rate': self.sla_target_rate,
+                'base_reward': self.last_base_reward,
+                'constraint_penalty': self.last_constraint_penalty,
+                'lagrangian_multiplier': self.last_lagrangian_multiplier,
+                'next_lagrangian_multiplier': self.last_next_lagrangian_multiplier,
+                'observed_sla_rate': self.last_observed_sla_rate,
+                'dual_updates': self.dual_updates,
+            })
+        return info
+
+    def update_reward_info_for_null_reward(self):
+        super(ConstrainedGapSurplusCostReward, self).update_reward_info_for_null_reward()
+        self.last_sla_cost = None
+        self.last_base_reward = None
+        self.last_constraint_penalty = None
+        self.last_lagrangian_multiplier = None
+        self.last_next_lagrangian_multiplier = None
+
+    def get_constraint_state(self) -> Dict[str, Any]:
+        return {
+            'lagrangian_multiplier': self.lagrangian_multiplier,
+            'dual_window_cost': self.dual_window_cost,
+            'dual_window_count': self.dual_window_count,
+            'dual_updates': self.dual_updates,
+            'last_observed_sla_rate': self.last_observed_sla_rate,
+        }
+
+    def load_constraint_state(self, state: Optional[Dict[str, Any]]):
+        if not state:
+            return
+        self.lagrangian_multiplier = float(np.clip(
+            state.get('lagrangian_multiplier', self.lagrangian_multiplier), 0, self.dual_max_lambda))
+        self.dual_window_cost = float(state.get('dual_window_cost', 0.0))
+        self.dual_window_count = int(state.get('dual_window_count', 0))
+        self.dual_updates = int(state.get('dual_updates', 0))
+        self.last_observed_sla_rate = float(state.get('last_observed_sla_rate', 0.0))
+
+
 REWARD_CLASS_MAPPING = {
     RewardFunctionType.GlobalRemainingGap: GlobalRemainingGapReward,
     RewardFunctionType.GlobalSatisfiedNodes: GlobalSatisfiedNodes,
     RewardFunctionType.GlobalThreeObjectives: GlobalThreeObjectivesReward,
     RewardFunctionType.ResourceUtilization: ResourceUtilizationReward,
     RewardFunctionType.GapSurplusCost: GapSurplusCostReward,
+    RewardFunctionType.ConstrainedGapSurplusCost: ConstrainedGapSurplusCostReward,
 }
 
 

@@ -278,6 +278,17 @@ class BaseRunner:
         self._eventually_load_agent_model()
         self._after_init_agent()
         self.agent.set_mode(self.run_mode)
+        self._sync_constraint_state_to_env(self.env, self.agent)
+
+    @staticmethod
+    def _sync_constraint_state_to_env(env: EnvWrapper, agent: AgentAbstract):
+        env.reward_class.load_constraint_state(agent.get_constraint_state())
+
+    @staticmethod
+    def _sync_constraint_state_from_env(env: EnvWrapper, agent: AgentAbstract):
+        state = env.reward_class.get_constraint_state()
+        if state:
+            agent.set_constraint_state(state)
 
     def _eventually_load_agent_model(self):
         model_load_wrapper = self.config.environment.agent.model_load
@@ -368,6 +379,7 @@ class BaseRunner:
                     self._log_off_policy_last_training_episode(current_i)
 
             next_state, reward, step_info = self.env.step(action, resource=self.resource_name)
+            self._sync_constraint_state_from_env(self.env, self.agent)
             done = step_info['done']
             previous_state = state
             previous_action = action
@@ -422,6 +434,7 @@ class BaseRunner:
                 reward=reward,
                 previous_done=previous_done
             )
+            self._sync_constraint_state_from_env(self.env, self.agent)
             initial_state = state
             executed_steps += len(rollout) * self.config.environment.state.stack_n_states
 
@@ -480,6 +493,7 @@ class BaseRunner:
             eval_agent.reset()
             eval_agent.set_mode(RunMode.Eval)
             self._set_env_info_on_agent(eval_agent)
+            self._sync_constraint_state_to_env(eval_env, eval_agent)
             rollout, _, _, _, _, _ = sample_trajectory(
                 env=eval_env,
                 initial_state=initial_state,
@@ -492,6 +506,14 @@ class BaseRunner:
                 mode=RunMode.Eval,
                 seed=seed
             )
+            constraint_state = eval_env.reward_class.get_constraint_state()
+            if constraint_state:
+                self.stats_tracker.track(
+                    f'evaluation-{seed}/constraint/lagrangian_multiplier',
+                    constraint_state['lagrangian_multiplier'], 0)
+                self.stats_tracker.track(
+                    f'evaluation-{seed}/constraint/dual_updates',
+                    constraint_state['dual_updates'], 0)
             print_status(i + 1, len(seeds), 'Evaluations performed')
         print()
         # average the eval rollouts metrics
@@ -541,6 +563,7 @@ class BaseRunner:
                 else:
                     val_agent.load_agent_state(agent_state)
                 val_agent.reset()
+                self._sync_constraint_state_to_env(val_env, val_agent)
                 rollout, _, _, _, _, _ = sample_trajectory(
                     env=val_env,
                     initial_state=initial_state,
@@ -553,6 +576,11 @@ class BaseRunner:
                     mode=RunMode.Validation,
                     seed=val_seed
                 )
+                constraint_state = val_env.reward_class.get_constraint_state()
+                if constraint_state:
+                    self.stats_tracker.track(
+                        f'validation-{val_seed}/constraint/lagrangian_multiplier',
+                        constraint_state['lagrangian_multiplier'], self.validation_counter)
                 print_status(i + 1, len(seeds), f'Performing validations iteration {self.validation_counter}')
             #  save the average values in the stats tracker
             track_average_values(tracker=self.stats_tracker, mode=RunMode.Validation,

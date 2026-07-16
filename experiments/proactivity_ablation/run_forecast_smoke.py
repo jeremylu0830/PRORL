@@ -115,6 +115,7 @@ def main() -> None:
             raise RuntimeError("training completed but no agent tensor changed")
         if runner.env.current_demand_forecast is None:
             raise RuntimeError("training completed without producing forecasts")
+        constraint_state = runner.env.reward_class.get_constraint_state()
         report.update({
             "status": "passed",
             "elapsed_seconds": elapsed,
@@ -123,6 +124,8 @@ def main() -> None:
             "changed_agent_tensors": changed,
             "agent_tensor_count": len(after),
             "actual_agent_type": runner.agent.name.value,
+            "reward_type": runner.env.reward_class.name.value,
+            "constraint_state": constraint_state,
             "state_spaces": {key.value: value for key, value in runner.env.state_spaces.items()},
             "finished_at": time.time(),
         })

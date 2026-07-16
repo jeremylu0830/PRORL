@@ -1,8 +1,9 @@
 # PRORL proactivity ablation
 
 This experiment tests whether PRORL's time encoding contributes to anticipatory
-resource movements. It does not modify the original configuration or any file under
-`prorl/`.
+resource movements. The original configurations and reward remain available. The
+optional constrained prototype adds a new reward type under `prorl/` and is activated
+only when a new configuration explicitly selects it.
 
 ## 1. Generate isolated configs
 
@@ -11,16 +12,21 @@ source .venv/bin/activate
 python experiments/proactivity_ablation/generate_configs.py
 ```
 
-This creates `generated/original.yaml`, `generated/no_time.yaml`, and
-`generated/forecast_no_time.yaml`. All use training seeds 10--19 and otherwise inherit
+This creates `generated/original.yaml`, `generated/no_time.yaml`,
+`generated/forecast_no_time.yaml`, and `generated/constrained_forecast_no_time.yaml`.
+All use training seeds 10--19 and otherwise inherit
 the paper's longer single-peak configuration. Forecast-No-Time removes `time-encoded`
 and adds a six-hour, node-major Schedule Oracle forecast to the state. The oracle exposes
 the configured future demand mean and intentionally excludes random observation noise.
+The constrained variant additionally removes remaining gap from the scalarized objective,
+sets a target violation rate, and learns a Lagrange multiplier during training. See
+`CONSTRAINED_FORECAST_PRORL_IMPLEMENTATION_ZH.md` for the exact formulation and limits.
 
 Run the compatibility and forecast integration tests with:
 
 ```bash
 ENV=test python -m unittest experiments.proactivity_ablation.test_forecast_state -v
+ENV=test python -m unittest experiments.proactivity_ablation.test_constrained_forecast -v
 ```
 
 The bounded training smoke test can be detached and monitored independently:
@@ -45,7 +51,7 @@ python prorl.py run worker run-worker -p 0 --stop-empty -q proactivity-ablation
 
 Multiple workers can consume the same queue.
 
-The folder command schedules all three variants. To schedule only Forecast-No-Time,
+The folder command schedules all four variants. To schedule only Forecast-No-Time,
 place or copy that config into an otherwise empty scheduling folder.
 
 ## 3. Analyze

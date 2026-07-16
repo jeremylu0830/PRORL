@@ -588,6 +588,10 @@ def track_off_policy_training_iteration(
         episode_stats['problem_solved'] = 0
         episode_stats['hour_satisfied'] = 0
         episode_stats['resource_utilization'] = []
+        episode_stats['sla_cost'] = []
+        episode_stats['lagrangian_multiplier'] = []
+        episode_stats['base_reward'] = []
+        episode_stats['constraint_penalty'] = []
     prefix = RunMode.Train.value
     satisfied_nodes = step_info['nodes_satisfied']
     n_nodes = tracker.config.environment.nodes.get_n_nodes()
@@ -614,6 +618,11 @@ def track_off_policy_training_iteration(
     if 'surplus' in step_info['reward_info']:
         # episode_stats['surplus'].append(step_info['reward_info']['surplus'])
         append_not_none(episode_stats['surplus'], step_info['reward_info']['surplus'])
+    for key in ('sla_cost', 'lagrangian_multiplier', 'base_reward', 'constraint_penalty'):
+        value = step_info['reward_info'].get(key)
+        append_not_none(episode_stats[key], value)
+        if value is not None:
+            tracker.track(f'{prefix}/constraint/{key}', value, iteration, tensorboard=True)
     if satisfied_nodes is not None:
         episode_stats['problem_solved'] += 1 if n_nodes == satisfied_nodes else 0
     if step_info['hour_satisfied'] is not None and step_info['hour_satisfied'] is True:
@@ -633,6 +642,10 @@ def track_off_policy_training_iteration(
         tracker.track(f'{prefix}/episode/hour_satisfied', episode_stats['hour_satisfied'], step)
         tracker.track(f'{prefix}/episode/resource_utilization',
                       np.mean(episode_stats['resource_utilization']).item(), step)
+        for key in ('sla_cost', 'lagrangian_multiplier', 'base_reward', 'constraint_penalty'):
+            if episode_stats[key]:
+                tracker.track(f'{prefix}/episode/constraint/{key}', np.array(episode_stats[key]), step,
+                              single_value_is_array=True, tensorboard=True)
         tracker.track(f'{prefix}/episode/length', episode_stats['len'], step)
         tracker.track(f'{prefix}/episode/total', 1, step)
         # we reset episode stats except for n_episodes
@@ -644,6 +657,10 @@ def track_off_policy_training_iteration(
         episode_stats['problem_solved'] = 0
         episode_stats['hour_satisfied'] = 0
         episode_stats['resource_utilization'] = []
+        episode_stats['sla_cost'] = []
+        episode_stats['lagrangian_multiplier'] = []
+        episode_stats['base_reward'] = []
+        episode_stats['constraint_penalty'] = []
 
 
 def append_not_none(array: list, value):

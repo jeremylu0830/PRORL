@@ -40,13 +40,32 @@ def add_oracle_forecast(config: dict, horizon: int = 6) -> None:
     state["additional_properties"]["forecast_type"] = "oracle"
 
 
+def use_constrained_reward(config: dict, sla_target_rate: float = 0.1) -> None:
+    reward = config["base_run_config"]["environment"]["reward"]
+    reward["type"] = "constrained-gap-surplus-cost"
+    parameters = reward["parameters"]
+    # A common [0, 1] scale keeps the learned multiplier comparable in train,
+    # validation and evaluation environments.
+    parameters["training_normalization_range"] = [0, 1]
+    parameters["val_eval_normalization_range"] = [0, 1]
+    parameters["objective_weights"] = [0.5, 0.5]
+    parameters["sla_target_rate"] = sla_target_rate
+    parameters["dual_learning_rate"] = 0.05
+    parameters["dual_initial_lambda"] = 1.0
+    parameters["dual_max_lambda"] = 20.0
+    parameters["dual_update_interval"] = 168
+
+
 def write_variant(base: dict, output: Path, name: str, with_time: bool, seeds: list[int],
-                  oracle_horizon: Optional[int] = None) -> None:
+                  oracle_horizon: Optional[int] = None,
+                  constrained_sla_target: Optional[float] = None) -> None:
     config = copy.deepcopy(base)
     if not with_time:
         without_time_feature(config)
     if oracle_horizon is not None:
         add_oracle_forecast(config, horizon=oracle_horizon)
+    if constrained_sla_target is not None:
+        use_constrained_reward(config, sla_target_rate=constrained_sla_target)
     config["multi_run_name"] = f"proactivity-ablation-{name}"
     config["random_seeds"]["run"] = seeds
     output_path = output / f"{name}.yaml"
@@ -63,6 +82,8 @@ def main() -> None:
     write_variant(base, args.output, "no_time", with_time=False, seeds=args.seeds)
     write_variant(base, args.output, "forecast_no_time", with_time=False,
                   seeds=args.seeds, oracle_horizon=6)
+    write_variant(base, args.output, "constrained_forecast_no_time", with_time=False,
+                  seeds=args.seeds, oracle_horizon=6, constrained_sla_target=0.1)
     print(f"Generated configs in {args.output.resolve()}")
 
 
