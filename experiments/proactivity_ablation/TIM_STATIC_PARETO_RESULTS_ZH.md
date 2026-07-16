@@ -98,6 +98,6 @@ Training allowed violations 從 50 直接跳到 100。Dynamic exhaustive 恰好�
 
 ## 下一個判別實驗
 
-先密集補完 train allowed violations `50..100`，找出 dynamic exhaustive 附近的 static frontier；若仍無 static point 能在相近 SLA 下達到相同或更低 surplus，才得到「動態方法可能降低 overprovisioning」的初步證據。
+後續 `50..100` dense frontier 已完成，結果見 `TIM_STATIC_PARETO_DENSE_RESULTS_ZH.md`。K=85 static 得到 34 violations、surplus 11406；dynamic exhaustive mean 為 34.7 violations、surplus 10072.8。因此動態方法可能在相近 SLA 下減少 overprovisioning，但需支付 movement，且尚未排除 K=101..201 與 training-optimum ties 中更強的 static solution。
 
 其後必須做 rolling-origin multi-week evaluation。只有在多個未見 traffic windows 上，dynamic oracle／MPC 穩定優於 train-only dense static frontier，才值得把 constrained Forecast-PRORL 當作主要演算法改進。

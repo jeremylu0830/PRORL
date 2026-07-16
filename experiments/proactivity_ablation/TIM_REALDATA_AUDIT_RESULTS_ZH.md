@@ -2,7 +2,7 @@
 
 ## 結論
 
-這個固定 TIM evaluation week **目前沒有證明需要動態調度**，而且 scalarized utility 有時會獎勵明顯更差的 SLA。後續兩個 train-only static controls 顯示：utility-best-static 的 utility 29.527 高於 exhaustive 的 18.921；SLA-best-static 則只出現 4/168 violations，遠低於 exhaustive 的平均 34.7。再後續的 static Pareto frontier 找到零搬移的中間方案，但在稀疏取樣下與 exhaustive 形成未互相支配的 trade-off。完整結果見 `TIM_BEST_STATIC_RESULTS_ZH.md`、`TIM_SLA_BEST_STATIC_RESULTS_ZH.md` 與 `TIM_STATIC_PARETO_RESULTS_ZH.md`。
+這個固定 TIM evaluation week **目前沒有證明需要 RL**，而且 scalarized utility 有時會獎勵明顯更差的 SLA。後續兩個 train-only static controls 顯示：utility-best-static 的 utility 29.527 高於 exhaustive 的 18.921；SLA-best-static 則只出現 4/168 violations，遠低於 exhaustive 的平均 34.7。Static Pareto 與 dense K=50..100 實驗進一步顯示：在約 20% violation rate 附近，dynamic exhaustive 可能以 movement 換取較低 surplus，但仍有未補完 thresholds 與 solver tie-breaking 限制。完整結果見 `TIM_BEST_STATIC_RESULTS_ZH.md`、`TIM_SLA_BEST_STATIC_RESULTS_ZH.md`、`TIM_STATIC_PARETO_RESULTS_ZH.md` 與 `TIM_STATIC_PARETO_DENSE_RESULTS_ZH.md`。
 
 - 在 `(gap, surplus, cost) = (0.6, 0.3, 0.1)`，`wait` 與 one-step exhaustive search 完全相同：最佳逐步行為是不搬。
 - 在 `(0.9, 0.1, 0)`，`wait` 同時有最高 utility 與最低 SLA violations。
