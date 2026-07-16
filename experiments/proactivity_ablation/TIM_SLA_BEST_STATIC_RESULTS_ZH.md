@@ -92,9 +92,11 @@ Utility-best-static 的 utility 最高，但 SLA 最差；SLA-best-static 的 SL
 
 ## 下一步
 
-不應立即投入更複雜 RL。下一個具判別力的實驗是：
+後續 static Pareto frontier 已完成，結果見 `TIM_STATIC_PARETO_RESULTS_ZH.md`。它找到多個零搬移的中間方案；例如 15/168 violations、surplus 13025。現有 sampled points 與 dynamic exhaustive 形成 trade-off，沒有任何一方完全支配另一方。
 
-1. 用 training-only optimization 建立 `SLA violation vs surplus/resource` 的 static Pareto frontier，而非只比較 utility 與極端 SLA 兩個端點；
+仍不應立即投入更複雜 RL。下一個具判別力的實驗是：
+
+1. 密集補完 dynamic exhaustive 附近的 train violation thresholds，避免由目前 8 個稀疏點誤判 dominance；
 2. 在多個不重疊 evaluation windows 或 rolling-origin splits 上凍結評估；
 3. 只有當合理 SLA threshold 下的 static frontier 穩定輸給 dynamic oracle/MPC，才訓練 constrained PRORL 或 Forecast-PRORL；
 4. 若 static 仍足夠，論文貢獻應轉向 benchmark/formulation audit，而不是宣稱 RL scheduling improvement。
