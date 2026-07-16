@@ -88,9 +88,11 @@ K=100 static 的 surplus 仍為 11073；先前 K=201 point 才降至 9417。Dyna
 
 ## 下一步
 
-不要立即訓練 Forecast-PRORL。先完成兩項：
+後續 K=50..201 與 validation-only tie selection 已完成，結果見 `TIM_STATIC_PARETO_VALIDATION_RESULTS_ZH.md`。Validation 改變 11/152 allocations，但 K=85 未變；dynamic exhaustive 仍位於 validation-selected static 的 SLA–surplus 邊界之外。
 
-1. 密集求解 K=101..201，確認 surplus 穿越 dynamic 10072.8 時的 static SLA；
-2. 對所有 training-optimal ties 加入 validation-only deterministic selection。
+不要立即訓練 Forecast-PRORL。單一週的 static control 已足夠，下一步改為：
 
-完成後才有足夠強的 static reference，接著再做 rolling-origin multi-week evaluation 與 dynamic oracle/MPC。
+1. rolling-origin multi-week evaluation；
+2. 每週比較 validation-selected static、dynamic exhaustive 與 dynamic oracle/MPC。
+
+只有動態方法在多個未見 weeks 上穩定勝過 static reference，才進入 constrained Forecast-PRORL。
