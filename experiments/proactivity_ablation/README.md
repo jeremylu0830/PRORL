@@ -168,3 +168,6 @@ The completed 200-job audit analysis and its statistical limitations are in
   <extracted-audit>/all_runs.csv \
   --output-dir experiments/proactivity_ablation/tim_realdata_audit_analysis
 ```
+
+The subsequent train-only utility-best-static control is documented in
+`TIM_BEST_STATIC_RESULTS_ZH.md`.

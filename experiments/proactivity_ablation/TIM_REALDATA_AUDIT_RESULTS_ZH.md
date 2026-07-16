@@ -2,14 +2,14 @@
 
 ## 結論
 
-這個 benchmark **不是完全不需要動態調度**，但動態調度的價值高度依賴 reward weights，而且 scalarized utility 有時會獎勵明顯更差的 SLA。
+這個 benchmark **不是完全不需要動態調度**，但動態調度的價值高度依賴 reward weights，而且 scalarized utility 有時會獎勵明顯更差的 SLA。後續 train-only utility-best-static control 更顯示：在 0.75/0.20/0.05 設定，固定 allocation 的 utility 29.527 已高於 exhaustive 的 18.921，但 SLA 更差；完整結果見 `TIM_BEST_STATIC_RESULTS_ZH.md`。
 
 - 在 `(gap, surplus, cost) = (0.6, 0.3, 0.1)`，`wait` 與 one-step exhaustive search 完全相同：最佳逐步行為是不搬。
 - 在 `(0.9, 0.1, 0)`，`wait` 同時有最高 utility 與最低 SLA violations。
-- 在 `(0.75, 0.2, 0.05)`，exhaustive search 是唯一同時明顯改善 utility 與 SLA 的設定，證明這個固定 evaluation week 確實存在可利用的 relocation opportunity。
+- 在 `(0.75, 0.2, 0.05)`，exhaustive search 相對 uniform wait 同時改善 utility 與 SLA，證明這個固定 evaluation week 存在 relocation opportunity；但 train-only utility-best-static 後來以零搬移取得更高 utility，因此這不構成 scalar-objective 下必須動態調度的證據。
 - 在 `(0.35, 0.6, 0.05)`，exhaustive search 雖大幅提高 utility，卻讓 SLA violation 從 64 小時增加到平均 135.6 小時。這不是營運改善，而是高 surplus weight 導致 objective 與 SLA 錯位。
 
-因此不能宣稱「真實 TIM trace 根本不需要 RL」，但也不能用這個 benchmark 無條件支持複雜 RL。較精確的結論是：**兩個設定偏好 static allocation；一個設定支持 relocation；另一個設定暴露 reward misalignment。**
+因此不能宣稱「真實 TIM trace 根本不需要 RL」，但也不能用這個 benchmark 無條件支持複雜 RL。較精確的結論是：**兩個設定直接偏好 uniform static；0.75 的 relocation 能改善 SLA，但 utility 可由更好的 static allocation 超越；0.35 則暴露 reward misalignment。**
 
 ## 實驗完整性
 
@@ -66,7 +66,7 @@ Exhaustive 相對 wait：
 - satisfied hours `+29.3`，95% CI `[28.286, 30.314]`；
 - 代價是 surplus `+2731.8` 與平均 42.6 次 movements。
 
-這是四組 weights 中唯一清楚支持 relocation necessity 的結果。Sampling utility 平均 `+2.044`，但 95% CI `[-1.201, 5.289]`、exact sign-flip `p=0.1914`，只靠 action sampling 並不穩定。
+這是四組 weights 中唯一清楚支持 relocation 相對 **uniform wait** 的結果。Sampling utility 平均 `+2.044`，但 95% CI `[-1.201, 5.289]`、exact sign-flip `p=0.1914`，只靠 action sampling 並不穩定。後續 utility-best-static 取得 utility 29.527，說明這項結果不能單獨證明 scalar-objective 需要動態調度。
 
 ### Weights 0.90/0.10/0
 
@@ -88,7 +88,7 @@ Exhaustive 相對 wait utility `+106.720`，主要來自 surplus 減少 `5469.3`
 
 1. **先改 formulation**：0.35/0.60/0.05 證明 scalarized utility 可以犧牲 SLA 換 surplus。下一個演算法方向應是 Constrained MDP／Lagrangian SLA constraint。
 2. **保留 WAIT/MOVE hierarchy**：兩組 weights 選擇 static，說明 agent 首先需要可靠判斷是否搬移，而不是每小時強迫產生 relocation decision。
-3. **只在 movement-necessary slice 評估 forecast**：0.75/0.20/0.05 是目前最有價值的真實資料設定，可用來比較 PRORL、Forecast-PRORL 與 MPC。
+3. **先定義 movement-necessary slice**：0.75/0.20/0.05 的 relocation 可改善 SLA，但 utility-best-static 已勝過 exhaustive；應先完成 SLA-best-static，再決定是否用它比較 PRORL、Forecast-PRORL 與 MPC。
 4. **建立 train-only best-static**：目前 wait 只保留原始 uniform initial allocation；用 training split 擬合的 static allocation 會是更強且無 leakage 的 baseline。
 5. **增加 workload/capacity variation**：下一步應跑 load 0.6/0.8/1.0/1.2，並使用多個 evaluation windows。否則不能判斷 relocation value 是普遍現象或單週特例。
 6. **原 PRORL 尚未在此 audit 中比較**：這些結果只建立 decision-problem baseline，不能用來宣稱 PRORL 或 Forecast-PRORL 的優劣。
