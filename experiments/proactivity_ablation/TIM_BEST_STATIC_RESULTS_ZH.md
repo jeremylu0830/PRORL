@@ -85,7 +85,7 @@
 目前可以說：
 
 1. **以 scalarized utility 為準**：train-only static capacity planning 已勝過現有動態 baselines，尚無必要導入 RL。
-2. **以 hourly SLA 為準**：exhaustive relocation 仍明顯較好，但尚未與 train-only SLA-best-static 比較。
+2. **以 hourly SLA 為準**：後續 train-only SLA-best-static 只出現 4/168 violations，優於 exhaustive 的平均 34.7；目前同樣沒有證明需要 dynamic relocation。
 3. **Reward formulation**：0.75 設定也出現 utility 與 SLA 方向不一致；0.35 設定的錯位不是孤例。
 
-因此下一個必要 control 是 `train-only SLA-best-static`：先最小化 training SLA violations，再以 aggregate gap、surplus 作 tie-break。只有它仍明顯輸給 dynamic exhaustive，才能說明 SLA 目標真的需要動態 relocation。
+後續 `train-only SLA-best-static` control 已完成，結果見 `TIM_SLA_BEST_STATIC_RESULTS_ZH.md`。它沒有輸給 dynamic exhaustive，反而把 violations 從 34.7 降至 4，故先前的動態必要性假說在這個固定 evaluation week 不成立。
